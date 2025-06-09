@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Details - {{ student }} - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5" data-aos="fade-up">
+    <h2>Student Details - {{ student }}</h2>
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            {% if messages %}
+            <div class="alert-container">
+                {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <p><strong>First Name:</strong> {{ student.first_name }}</p>
+            <p><strong>Last Name:</strong> {{ student.last_name }}</p>
+            <p><strong>Roll Number:</strong> {{ student.roll_number }}</p>
+            <p><strong>Email:</strong> {{ student.email }}</p>
+            <p><strong>Department:</strong> {{ student_dept_course.department.name|default:"Not assigned" }}</p>
+            <p><strong>Course:</strong> {{ student_dept_course.course.name|default:"Not assigned" }}</p>
+            <p><strong>Is Active:</strong> {{ student.is_active|yesno:"Yes,No" }}</p>
+        </div>
+    </div>
+
+    <!-- Grade Distribution Pie Chart -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h4>Overall Grade Distribution</h4>
+            {% if grade_data.labels %}
+            <canvas id="gradeChart-overall" style="max-width: 400px; max-height: 200px; margin: 0 auto;"></canvas>
+            {% else %}
+            <p class="text-center">No grade data available for this student.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <h4>Results</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Score</th>
+                <th>Grade</th>
+                <th>Semester</th>
+                <th>Year</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+            <tr>
+                <td>{{ result.subject }}</td>
+                <td>{{ result.score }}</td>
+                <td>{{ result.grade }}</td>
+                <td>{{ result.semester }}</td>
+                <td>{{ result.year }}</td>
+                <td>{{ result.remarks }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No results available for this student.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Action Buttons -->
+    <div class="mt-4">
+        <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Back to Student List</a>
+        {% if user.is_superuser %}
+        <a href="{% url 'students:edit_student' student.id %}" class="btn btn-primary ms-2"><i class="fas fa-edit"></i> Edit Student</a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Render Overall Grade Distribution Chart
+        {% if grade_data.labels %}
+        (function() {
+            const canvas = document.getElementById('gradeChart-overall');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                const labels = {{ grade_data.labels|safe }};
+                const data = {{ grade_data.data|safe }};
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                            borderColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: { display: true, text: 'Overall Grade Distribution' }
+                        }
+                    }
+                });
+            }
+        })();
+        {% endif %}
+    });
+</script>
+
+<style>
+/* Override table styles for visibility */
+.table td {
+    color: #d3d3d3 !important; /* Light gray for table text */
+}
+
+.table .text-muted {
+    color: #8892b0 !important; /* Ensure "No results" text is visible */
+}
+
+/* Ensure headers are white */
+h2, h4 {
+    color: #ffffff !important;
+}
+
+/* Card background for contrast */
+.card-body {
+    background-color: rgba(0, 0, 0, 0.3); /* Darker background for chalkboard effect */
+}
+
+/* Text inside card for better visibility */
+.card-body p {
+    color: #d3d3d3 !important; /* Light gray for card text */
+}
+</style>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Result for {{ result.student }} - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5" data-aos="fade-up">
+    <h2>Edit Result for {{ result.student }}</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST" action="{% url 'students:edit_result' result.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="subject" class="form-label">Subject</label>
+                    <select class="form-select" id="subject" name="subject" required>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" {% if subject.id == result.subject.id %}selected{% endif %}>{{ subject.name }} ({{ subject.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="score" class="form-label">Score</label>
+                    <input type="number" class="form-control" id="score" name="score" value="{{ result.score }}" step="0.01" min="0" max="100" required>
+                </div>
+                <div class="mb-3">
+                    <label for="semester" class="form-label">Semester</label>
+                    <input type="text" class="form-control" id="semester" name="semester" value="{{ result.semester }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="year" class="form-label">Year</label>
+                    <input type="number" class="form-control" id="year" name="year" value="{{ result.year }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks</label>
+                    <textarea class="form-control" id="remarks" name="remarks">{{ result.remarks }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{% url 'students:results_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Override form label and input text color for visibility */
+.form-label {
+    color:rgb(249, 247, 247) !important; /* Chalk-like white */
+}
+
+.form-control, .form-select {
+    color: #e6e6e6 !important; /* Ensure input text is white */
+    background: rgba(255, 252, 252, 0) !important; /* Match form background */
+}
+
+/* Ensure headers are white */
+h2 {
+    color:rgb(247, 239, 239) !important;
+}
+
+/* Card background for contrast */
+.card-body {
+    background-color: rgba(0, 0, 0, 0.3); /* Darker background for chalkboard effect */
+}
+</style>
+{% endblock %}

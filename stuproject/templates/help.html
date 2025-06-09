@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Help - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5" data-aos="fade-up">
+    <h2>Help & Support</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Welcome to the Student Management System Help Page</h5>
+            <p class="card-text">This system allows superusers to manage students, subjects, and results efficiently. Below are some tips to get started:</p>
+            <ul>
+                <li><strong>Add a Student:</strong> Use the "Add Student" button to create a new student profile with their details and credentials.</li>
+                <li><strong>Manage Subjects:</strong> Add or edit subjects using the "Add Subject" button. Each subject requires a name and code.</li>
+                <li><strong>Add Results:</strong> For each student, you can add results by selecting a subject, entering a score, semester, year, and optional remarks. Grades are calculated automatically based on the score.</li>
+                <li><strong>Filter Results:</strong> Use the semester filter to view results for a specific semester.</li>
+                <li><strong>View Charts:</strong> Click "View Results" for any student to see a doughnut chart of their grade distribution.</li>
+                <li><strong>Logout:</strong> Use the logout link in the navigation bar to securely exit the system.</li>
+            </ul>
+            <p>If you encounter any issues, please contact the system administrator.</p>
+            <a href="{% url 'students:student_list' %}" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+<style>
+/* Override text colors to white for better visibility on dark background */
+.container h2,
+.card-body h5,
+.card-body p,
+.card-body ul li,
+.card-body ul li strong {
+    color:rgb(237, 243, 239) !important; /* White text for headers, paragraphs, list items, and strong tags */
+}
+
+/* Ensure the button text is readable (already white in btn-primary, but confirm) */
+.btn-primary {
+    color: #ffffff !important; /* White text for the button */
+}
+
+/* Override form label color for consistency (though not used here, kept for reference) */
+.card-label {
+    color: #d3d3d3 !important; /* Light gray to match profile.html table content */
+}
+
+/* Optional: Adjust card background for better contrast if needed */
+.card-body {
+    background-color: #1a2526; /* Dark background to match theme */
+}
+</style>
+{% endblock %}

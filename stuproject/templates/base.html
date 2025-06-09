@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Student Management System{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSfWv9yYOdfYdx5kudJatJB5B7R29w670iAEBW0S2l6QXhRky0jH4I5z0RNKxI0T5Q5MRr0gqPHqLiMg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- AOS CSS -->
+    <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha512-T0UlMZa1jVRdW8F1BML0H7q2iEvHnrj2N2zT0iZr0JswpOc6uMW+nJ0vIACCn1U2A1M30H6G0H5Z/3Q8hZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <!-- Google Fonts for Chalkboard Style -->
+    <link href="https://fonts.googleapis.com/css2?family=Chalkduster&family=Schoolbell&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --dark-blue: #0a192f;
+            --darker-blue: #020c1b;
+            --light-blue: #172a45;
+            --accent-blue: #64ffda;
+            --text-light: #e6f1ff;
+            --text-muted: #8892b0;
+            --card-bg: rgba(100, 255, 218, 0.03);
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --chalkboard-bg: #1a3c34; /* Dark green-black chalkboard color */
+            --chalk-text: #e6e6e6; /* Chalk-like white */
+            --chalk-accent: #ffeb3b; /* Yellow chalk accent */
+        }
+
+        body {
+            /* Chalkboard background */
+            background: var(--chalkboard-bg) url('https://www.transparenttextures.com/patterns/blackboard.png') repeat;
+            color: var(--chalk-text);
+            font-family: 'Schoolbell', cursive; /* Chalkboard font */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Improved Navbar */
+        .navbar {
+            background: rgba(0, 0, 0, 0.8); /* Semi-transparent black for chalkboard theme */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        .navbar-brand {
+            font-family: 'Chalkduster', cursive; /* Fancy chalkboard font for brand */
+            font-weight: 600;
+            letter-spacing: 1px;
+            position: relative;
+            color: var(--chalk-text) !important;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .navbar-brand::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--chalk-accent);
+            transition: width 0.4s ease;
+        }
+
+        .navbar-brand:hover::after {
+            width: 100%;
+        }
+
+        .nav-link {
+            font-family: 'Schoolbell', cursive;
+            position: relative;
+            margin: 0 10px;
+            color: var(--chalk-text) !important;
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-link:hover {
+            color: var(--chalk-accent) !important;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--chalk-accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::before {
+            width: 100%;
+        }
+
+        /* Fix for navbar toggler icon (3 lines visibility) */
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(230, 230, 230, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+        }
+
+        .navbar-toggler {
+            border-color: var(--chalk-text) !important;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.3) !important;
+        }
+
+        /* Style for the logout button to match nav-link */
+        .logout-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0 10px;
+            color: var(--chalk-text);
+            font-size: 1rem;
+            font-family: 'Schoolbell', cursive;
+            position: relative;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .logout-btn:hover {
+            color: var(--chalk-accent);
+        }
+
+        .logout-btn::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--chalk-accent);
+            transition: width 0.3s ease;
+        }
+
+        .logout-btn:hover::before {
+            width: 100%;
+        }
+
+        .logout-btn i {
+            margin-right: 5px;
+        }
+
+        /* Main Content Animation */
+        main {
+            flex: 1;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(0, 0, 0, 0.3); /* Darker background for chalkboard effect */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            transition: all 0.4s cubic-bezier(0.645, 0.045, 0.355, 1);
+            transform: translateY(0);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-family: 'Chalkduster', cursive;
+            color: var(--chalk-text);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
+            border-color: rgba(255, 235, 59, 0.3);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: transparent;
+            border: 1px solid var(--chalk-accent);
+            color: var(--chalk-accent);
+            font-family: 'Schoolbell', cursive;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary:hover {
+            color: var(--chalkboard-bg);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--chalk-accent);
+            transition: all 0.4s ease;
+            z-index: -1;
+        }
+
+        .btn-primary:hover::before {
+            left: 0;
+        }
+
+        /* Tables */
+        .table {
+            color: black; /* Black font color for table content */
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .table th {
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--chalk-accent);
+            font-family: 'Chalkduster', cursive;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .table td {
+            color: black; /* Ensure table data is black */
+        }
+
+        .table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.01);
+        }
+
+        /* Remove table borders for a cleaner chalkboard look */
+        .table, .table th, .table td {
+            border: none !important; /* Remove borders to address "3 lines not visible" */
+        }
+
+        .table tbody tr {
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.3); /* Dashed line for separation */
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.8) !important;
+            color: var(--chalk-text);
+            padding: 2rem 0;
+            position: relative;
+            font-family: 'Schoolbell', cursive;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--chalk-accent), transparent);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--chalkboard-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--chalk-accent);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--chalk-text);
+        }
+
+        /* Form Elements */
+        .form-control, .form-select {
+            background: rgba(255, 255, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--chalk-text);
+            font-family: 'Schoolbell', cursive;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--chalk-accent);
+            box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.1);
+            color: var(--chalk-text);
+        }
+
+        /* Animations */
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'students:student_list' %}">Student Management System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:student_list' %}"><i class="fas fa-users"></i> Students</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:results_list' %}"><i class="fas fa-chart-bar"></i> Results</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:subjects_list' %}"><i class="fas fa-book"></i> Subjects</a>
+                        </li>
+                        <li class="nav-item">
+                                <a class="nav-link" href="{% url 'students:departments_list' %}">Departments</a>
+                            </li>
+                        <li class="nav-item">
+                                <a class="nav-link" href="{% url 'students:courses_list' %}">Courses</a>
+                            </li>
+                       
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:fees_list' %}"><i class="fas fa-money-bill-wave"></i> Fees</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:help' %}"><i class="fas fa-question-circle"></i> Help</a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:profile' %}"><i class="fas fa-user"></i> Profile</a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <form action="{% url 'login' %}" method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-3 animate__animated animate__fadeInUp">
+        <div class="container">
+            <p class="mb-0">
+                © <span class="current-year"></span> Student Management System. 
+                <span class="d-block d-md-inline">All rights reserved.</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    <!-- AOS JS -->
+    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+        });
+    </script>
+    
+    <!-- Custom JS -->
+    <script>
+        // Set current year in footer
+        document.querySelector('.current-year').textContent = new Date().getFullYear();
+        
+        // Add animation to elements when they come into view
+        const animateOnScroll = () => {
+            const elements = document.querySelectorAll('.animate-on-scroll');
+            elements.forEach(el => {
+                const elementPosition = el.getBoundingClientRect().top;
+                const screenPosition = window.innerHeight / 1.2;
+                
+                if (elementPosition < screenPosition) {
+                    el.classList.add('animate__animated', 'animate__fadeInUp');
+                }
+            });
+        };
+        
+        window.addEventListener('load', animateOnScroll);
+        window.addEventListener('scroll', animateOnScroll);
+    </script>
+</body>
+</html>

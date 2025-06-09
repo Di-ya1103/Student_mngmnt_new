@@ -1,0 +1,53 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Add Result for {{ student }} - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5" data-aos="fade-up">
+    <h2>Add Result for {{ student }}</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if messages %}
+            <div class="alert-container">
+                {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <form method="POST" action="{% url 'students:add_result' student.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="subject" class="form-label">Subject</label>
+                    <select class="form-select" id="subject" name="subject" required>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="score" class="form-label">Score</label>
+                    <input type="number" class="form-control" id="score" name="score" step="0.01" min="0" max="100" required>
+                </div>
+                <div class="mb-3">
+                    <label for="semester" class="form-label">Semester</label>
+                    <input type="text" class="form-control" id="semester" name="semester" required>
+                </div>
+                <div class="mb-3">
+                    <label for="year" class="form-label">Year</label>
+                    <input type="number" class="form-control" id="year" name="year" required>
+                </div>
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks</label>
+                    <textarea class="form-control" id="remarks" name="remarks"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Result</button>
+                <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

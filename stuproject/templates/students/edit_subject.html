@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Subject - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5" data-aos="fade-up">
+    <h2>Edit Subject: {{ subject.name }}</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST" action="{% url 'students:edit_subject' subject.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ subject.name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="code" class="form-label">Code</label>
+                    <input type="text" class="form-control" id="code" name="code" value="{{ subject.code }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{% url 'students:subjects_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Override form label and input text color for visibility */
+.form-label {
+    color: #e6e6e6 !important; /* Chalk-like white */
+}
+
+.form-control {
+    color: #e6e6e6 !important; /* Ensure input text is white */
+    background: rgba(255, 255, 255, 0.1) !important; /* Match form background */
+}
+
+/* Ensure headers are white */
+h2 {
+    color: #ffffff !important;
+}
+
+/* Card background for contrast */
+.card-body {
+    background-color: rgba(0, 0, 0, 0.3); /* Darker background for chalkboard effect */
+}
+</style>
+{% endblock %}

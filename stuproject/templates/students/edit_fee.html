@@ -1,0 +1,96 @@
+```html
+{% extends 'base.html' %}
+
+{% block title %}Edit Fee - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5" data-aos="fade-up">
+    <h2>Edit Fee</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if messages %}
+            <div class="alert-container">
+                {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <form method="POST" action="{% url 'students:edit_fee' fee.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="student" class="form-label">Student</label>
+                    <select class="form-select" id="student" name="student" required>
+                        <option value="">Select a student</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}" {% if student.id == fee.student.id %}selected{% endif %}>
+                            {{ student.first_name }} {{ student.last_name }} ({{ student.roll_number }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Amount</label>
+                    <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="{{ fee.amount }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="due_date" class="form-label">Due Date</label>
+                    <input type="date" class="form-control" id="due_date" name="due_date" value="{{ fee.due_date|date:'Y-m-d' }}" required>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_paid" name="is_paid" {% if fee.is_paid %}checked{% endif %}>
+                    <label class="form-check-label" for="is_paid">Is Paid</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Fee</button>
+                <a href="{% url 'students:fees_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Form labels and input text */
+.form-label, .form-check-label {
+    color: #ffffff !important; /* White for labels */
+}
+
+/* Form inputs */
+.form-control,
+.form-select {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* Semi-transparent background for inputs */
+    color: #ffffff !important; /* White text */
+    border-color: #ffffff !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important; /* White text on focus */
+    border-color: #ffeb3b !important; /* Yellow border on focus */
+    box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
+}
+
+/* Select dropdown options */
+.form-select option {
+    background-color: #333333 !important; /* Dark background for options */
+    color: #ffffff !important; /* White text for options */
+}
+
+/* Headers */
+h2 {
+    color: #ffffff !important; /* White for headers */
+}
+
+/* Card background */
+.card {
+    background-color: rgba(0, 0, 0, 0.3) !important; /* Darker background for chalkboard effect */
+}
+
+/* Alerts */
+.alert {
+    color: #000000 !important; /* Black text for alerts for contrast */
+}
+</style>
+{% endblock %}
