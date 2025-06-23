@@ -70,3 +70,23 @@ class StudentDepartmentCourse(models.Model):
 
     def __str__(self):
         return f"{self.student} - Dept: {self.department} - Course: {self.course}"
+    
+# students/models.py
+# students/models.py
+class Attendance(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendances')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True)  # Added
+    date = models.DateField()
+    status = models.CharField(max_length=10, choices=[
+        ('Present', 'Present'),
+        ('Absent', 'Absent'),
+        ('Late', 'Late')
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.student} - {self.date} - {self.status}"
+
+    class Meta:
+        unique_together = ('student', 'date', 'subject')  # Updated to include subject

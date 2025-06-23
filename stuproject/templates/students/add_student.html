@@ -1,95 +1,154 @@
 {% extends 'base.html' %}
-{% load static %}
+
+{% block title %}Add Student - Student Management System{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Student</title>
-    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #212529;
-        }
-        .container h2, .form-label, .form-check-label {
-            color: #ffffff !important;
-        }
-    </style>
-</head>
-<body>
-<div class="container mt-5">
-    <h2>Add Student</h2>
-
-    <!-- Messages -->
-    {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+<div class="container mt-5" data-aos="fade-up">
+    <h2 class="text-white">Add New Student</h2>
+    <div class="card shadow-sm" style="background-color: #1a3c34;">
+        <div class="card-body">
+            {% if messages %}
+            <div class="alert-container">
+                {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Personal Information -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="username" class="form-label">Username*</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email*</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
 
-    <!-- Add Student Form -->
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" name="username" id="username" class="form-control" value="{{ username|default_if_none:'' }}" required>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="first_name" class="form-label">First Name*</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="last_name" class="form-label">Last Name*</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="roll_number" class="form-label">Roll Number*</label>
+                        <input type="text" class="form-control" id="roll_number" name="roll_number" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="password" class="form-label">Password*</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                </div>
+                
+                <!-- Academic Information -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="department" class="form-label">Department</label>
+                        <select class="form-select" id="department" name="department">
+                            <option value="" selected disabled>Select Department</option>
+                            {% for department in departments %}
+                            <option value="{{ department.id }}">{{ department.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="course" class="form-label">Course</label>
+                        <select class="form-select" id="course" name="course">
+                            <option value="" selected disabled>Select Course</option>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Status -->
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                    <label class="form-check-label" for="is_active">Active</label>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary me-md-2">Add Student</button>
+                    <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
         </div>
-        <div class="mb-3">
-            <label for="first_name" class="form-label">First Name</label>
-            <input type="text" name="first_name" id="first_name" class="form-control" value="{{ first_name|default_if_none:'' }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="last_name" class="form-label">Last Name</label>
-            <input type="text" name="last_name" id="last_name" class="form-control" value="{{ last_name|default_if_none:'' }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="roll_number" class="form-label">Roll Number</label>
-            <input type="text" name="roll_number" id="roll_number" class="form-control" value="{{ roll_number|default_if_none:'' }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" name="email" id="email" class="form-control" value="{{ email|default_if_none:'' }}" required>
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" name="password" id="password" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label for="department" class="form-label">Department</label>
-            <select name="department" id="department" class="form-control">
-                <option value="">Select a department (optional)</option>
-                {% for department in departments %}
-                    <option value="{{ department.id }}">{{ department.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="mb-3">
-            <label for="course" class="form-label">Course</label>
-            <select name="course" id="course" class="form-control">
-                <option value="">Select a course (optional)</option>
-                {% for course in courses %}
-                    <option value="{{ course.id }}">{{ course.name }} ({{ course.department.name }})</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="is_active" id="is_active" class="form-check-input" {% if is_active|default_if_none:True %}checked{% endif %}>
-            <label for="is_active" class="form-check-label">Is Active</label>
-        </div>
-        <button type="submit" class="btn btn-primary">Add Student</button>
-        <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<style>
+    /* Ensure form labels are highly visible */
+    .form-label {
+        color: #ffffff !important;
+        font-weight: bold;
+    }
+
+    /* Enhance form control visibility */
+    .form-control, .form-select {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: #ffffff !important;
+        border: 1px solid #1e90ff !important;
+    }
+
+    /* Placeholder text color */
+    .form-control::placeholder {
+        color: #cccccc !important;
+    }
+
+    /* Focus state */
+    .form-control:focus, .form-select:focus {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        border-color: #ffeb3b !important;
+        box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
+        color: #ffffff !important;
+    }
+
+    /* Select dropdown options */
+    .form-select option {
+        background-color: #1a3c34 !important;
+        color: #ffffff !important;
+    }
+
+    /* Card styling */
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+
+    /* Button styling */
+    .btn-primary {
+        background-color: #1e90ff !important;
+        border: none;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d !important;
+        border: none;
+    }
+
+    /* Form check styling */
+    .form-check-input:checked {
+        background-color: #1e90ff;
+        border-color: #1e90ff;
+    }
+</style>
+
+
+   
 {% endblock %}

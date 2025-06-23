@@ -33,7 +33,7 @@
             --text-light: #e6f1ff;
             --text-muted: #8892b0;
             --card-bg: rgba(100, 255, 218, 0.03);
-            --success-color: #28a745;
+            --success-color: rgb(34, 87, 123);
             --danger-color: #dc3545;
             --warning-color: #ffc107;
             --info-color: #17a2b8;
@@ -43,8 +43,7 @@
         }
 
         body {
-            /* Chalkboard background */
-            background: var(--chalkboard-bg) url('https://www.transparenttextures.com/patterns/blackboard.png') repeat;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%); /* Dark gradient from image */
             color: var(--chalk-text);
             font-family: 'Schoolbell', cursive; /* Chalkboard font */
             min-height: 100vh;
@@ -231,7 +230,7 @@
 
         /* Tables */
         .table {
-            color: black; /* Black font color for table content */
+            color: var(--chalk-text); /* Chalk-like white for table content */
             border-color: rgba(255, 255, 255, 0.2);
             background: rgba(0, 0, 0, 0.3);
         }
@@ -246,21 +245,21 @@
         }
 
         .table td {
-            color: black; /* Ensure table data is black */
+            color: var(--chalk-text); /* Ensure table data is chalk-like white */
         }
 
+        /* Remove all table animations and effects */
         .table tbody tr {
-            transition: all 0.3s ease;
+            transition: none;
         }
 
         .table tbody tr:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: scale(1.01);
+            background: none; /* Remove hover effect */
         }
 
         /* Remove table borders for a cleaner chalkboard look */
         .table, .table th, .table td {
-            border: none !important; /* Remove borders to address "3 lines not visible" */
+            border: none !important; /* Remove borders */
         }
 
         .table tbody tr {
@@ -346,7 +345,10 @@
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'students:student_list' %}">Student Management System</a>
+            <a class="navbar-brand" href="{% url 'students:student_list' %}">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Student Management System
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -355,41 +357,76 @@
                     {% if user.is_authenticated %}
                         {% if user.is_superuser %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'students:student_list' %}"><i class="fas fa-users"></i> Students</a>
+                            <a class="nav-link" href="{% url 'students:student_list' %}">
+                                <i class="fas fa-users"></i>
+                                Students
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'students:results_list' %}"><i class="fas fa-chart-bar"></i> Results</a>
+                            <a class="nav-link" href="{% url 'students:results_list' %}">
+                                <i class="fas fa-chart-bar"></i>
+                                Results
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'students:subjects_list' %}"><i class="fas fa-book"></i> Subjects</a>
+                            <a class="nav-link" href="{% url 'students:subjects_list' %}">
+                                <i class="fas fa-book"></i>
+                                Subjects
+                            </a>
                         </li>
                         <li class="nav-item">
-                                <a class="nav-link" href="{% url 'students:departments_list' %}">Departments</a>
-                            </li>
-                        <li class="nav-item">
-                                <a class="nav-link" href="{% url 'students:courses_list' %}">Courses</a>
-                            </li>
-                       
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'students:fees_list' %}"><i class="fas fa-money-bill-wave"></i> Fees</a>
+                            <a class="nav-link" href="{% url 'students:departments_list' %}">
+                                <i class="fas fa-building"></i>
+                                Departments
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'students:help' %}"><i class="fas fa-question-circle"></i> Help</a>
+                            <a class="nav-link" href="{% url 'students:courses_list' %}">
+                                <i class="fas fa-bookmark"></i>
+                                Courses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:fees_list' %}">
+                                <i class="fas fa-money-bill-wave"></i>
+                                Fees
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:attendance_list' %}">
+                                <i class="fas fa-clipboard-list"></i>
+                                Attendance
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:help' %}">
+                                <i class="fas fa-question-circle"></i>
+                                Help
+                            </a>
                         </li>
                         {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'students:profile' %}"><i class="fas fa-user"></i> Profile</a>
+                            <a class="nav-link" href="{% url 'students:profile' %}">
+                                <i class="fas fa-user"></i>
+                                Profile
+                            </a>
                         </li>
                         {% endif %}
                         <li class="nav-item">
-                            <form action="{% url 'login' %}" method="POST" class="d-inline">
+                            <form action="{% url 'auth:login' %}" method="POST" class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                                <button type="submit" class="logout-btn">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Logout
+                                </button>
                             </form>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+                            <a class="nav-link" href="{% url 'auth:login' %}">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
@@ -407,8 +444,12 @@
     <footer class="text-center py-3 animate__animated animate__fadeInUp">
         <div class="container">
             <p class="mb-0">
-                © <span class="current-year"></span> Student Management System. 
-                <span class="d-block d-md-inline">All rights reserved.</span>
+                <i class="fas fa-graduation-cap me-2"></i>
+                <strong>Student Management System</strong>
+            </p>
+            <p class="mb-0 small">
+                © <span class="current-year"></span> All rights reserved. 
+                <span class="d-block d-md-inline">Built with ❤️ for education</span>
             </p>
         </div>
     </footer>
@@ -431,9 +472,9 @@
         // Set current year in footer
         document.querySelector('.current-year').textContent = new Date().getFullYear();
         
-        // Add animation to elements when they come into view
+        // Remove scroll-based animations for table
         const animateOnScroll = () => {
-            const elements = document.querySelectorAll('.animate-on-scroll');
+            const elements = document.querySelectorAll('.animate-on-scroll:not(.table)');
             elements.forEach(el => {
                 const elementPosition = el.getBoundingClientRect().top;
                 const screenPosition = window.innerHeight / 1.2;

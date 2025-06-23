@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 
 {% block title %}Login - Student Management System{% endblock %}
@@ -26,7 +25,7 @@
                 </div>
                 {% endif %}
 
-                <form method="POST" action="{% url 'login' %}">
+                <form method="POST" action="{% url 'auth:login' %}">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>

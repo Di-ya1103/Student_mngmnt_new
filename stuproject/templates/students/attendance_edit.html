@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Attendance - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Edit Attendance Form -->
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white">Edit Attendance for {{ attendance.student.first_name }} {{ attendance.student.last_name }}</h2>
+        <form method="POST" action="">
+            {% csrf_token %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label for="student" class="form-label text-white">Student</label>
+                    <input type="text" class="form-control" id="student" value="{{ attendance.student.first_name }} {{ attendance.student.last_name }} ({{ attendance.student.roll_number }})" disabled>
+                    <input type="hidden" name="student" value="{{ attendance.student.id }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="subject" class="form-label text-white">Subject (Optional)</label>
+                    <select class="form-select" id="subject" name="subject">
+                        <option value="">No Subject</option>
+                        {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if attendance.subject and attendance.subject.id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="date" class="form-label text-white">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" value="{{ attendance.date|date:'Y-m-d' }}" required>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="status" class="form-label text-white">Status</label>
+                <select class="form-select" id="status" name="status" required aria-label="Attendance status">
+                    <option value="">Select Status</option>
+                    <option value="Present" {% if attendance.status == 'Present' %}selected{% endif %}>Present</option>
+                    <option value="Absent" {% if attendance.status == 'Absent' %}selected{% endif %}>Absent</option>
+                    <option value="Late" {% if attendance.status == 'Late' %}selected{% endif %}>Late</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Attendance</button>
+            <a href="{% url 'students:attendance_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

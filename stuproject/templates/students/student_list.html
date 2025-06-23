@@ -23,7 +23,7 @@
         <div class="col-md-6">
             <form method="GET" class="d-flex gap-3">
                 <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                    <span class="input-group-text bg-dark-blue text-white"><i class="fas fa-search"></i></span>
                     <input type="text" name="search" class="form-control search-input" placeholder="Search by name or roll number" value="{{ search_query }}">
                 </div>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Search</button>
@@ -33,17 +33,17 @@
             </form>
         </div>
         <div class="col-md-6 text-md-end">
-            <a href="{% url 'students:add_student' %}" class="btn btn-success"><i class="fas fa-plus me-2"></i> Add Student</a>
+            <a href="{% url 'students:add_student' %}" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Add Student</a>
         </div>
     </div>
 
     <!-- Students Table -->
-    <div class="card p-4" data-aos="fade-up" data-aos-delay="400">
-        <h2 class="mb-4">Students</h2>
-        <div class="table-responsive">
+    <div class="card p-4 bg-dark-blue" data-aos="fade-up" data-aos-delay="400" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white">Students</h2>
+        <div class="table-responsive" style="overflow-y: auto; -ms-overflow-style: none; scrollbar-width: none;">
             <table class="table table-striped">
                 <thead>
-                    <tr>
+                    <tr style="background-color: #0a192f; color: #1e90ff;">
                         <th class="col-min-width">First Name</th>
                         <th class="col-min-width">Last Name</th>
                         <th class="col-min-width">Roll Number</th>
@@ -57,7 +57,7 @@
                 </thead>
                 <tbody>
                     {% for student in students %}
-                    <tr data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:400 }}">
+                    <tr data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:400 }}" style="background-color: #1c2526; color: #e6e6e6;">
                         <td>{{ student.first_name }}</td>
                         <td>{{ student.last_name }}</td>
                         <td>{{ student.roll_number }}</td>
@@ -65,33 +65,27 @@
                         <td>
                             {% for sdc in student_dept_courses %}
                                 {% if sdc.student.id == student.id %}
-                                    {{ sdc.department.name|default:"Not assigned" }}
-                                    <!-- Debug: Found department for student ID {{ student.id }} -->
+                                    {{ sdc.department.name|default:" " }}
                                 {% else %}
                                     {% if forloop.last and not sdc.student.id == student.id %}
-                                        Not assigned
-                                        <!-- Debug: No department found for student ID {{ student.id }} -->
+                                        
                                     {% endif %}
                                 {% endif %}
                             {% empty %}
-                                Not assigned
-                                <!-- Debug: student_dept_courses is empty for student ID {{ student.id }} -->
+                                
                             {% endfor %}
                         </td>
                         <td>
                             {% for sdc in student_dept_courses %}
                                 {% if sdc.student.id == student.id %}
-                                    {{ sdc.course.name|default:"Not assigned" }}
-                                    <!-- Debug: Found course for student ID {{ student.id }} -->
+                                    {{ sdc.course.name|default:" " }}
                                 {% else %}
                                     {% if forloop.last and not sdc.student.id == student.id %}
-                                        Not assigned
-                                        <!-- Debug: No course found for student ID {{ student.id }} -->
+                                         
                                     {% endif %}
                                 {% endif %}
                             {% empty %}
-                                Not assigned
-                                <!-- Debug: student_dept_courses is empty for student ID {{ student.id }} -->
+                                 
                             {% endfor %}
                         </td>
                         <td>
@@ -127,7 +121,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
+                    <tr style="background-color: #1c2526; color: #e6e6e6;">
                         <td colspan="9" class="text-center text-muted">No students found.</td>
                     </tr>
                     {% endfor %}
@@ -142,13 +136,13 @@
         <ul class="pagination justify-content-center">
             {% if students.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="{% url 'students:student_list' %}?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous">
+                <a class="page-link" href="{% url 'students:student_list' %}?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
                     <span aria-hidden="true">«</span>
                 </a>
             </li>
             {% else %}
             <li class="page-item disabled">
-                <a class="page-link" href="#" aria-label="Previous">
+                <a class="page-link" href="#" aria-label="Previous" style="color: #8892b0; background-color: #0a192f; border-color: #1e90ff;">
                     <span aria-hidden="true">«</span>
                 </a>
             </li>
@@ -156,19 +150,19 @@
 
             {% for num in students.paginator.page_range %}
             <li class="page-item {% if students.number == num %}active{% endif %}">
-                <a class="page-link" href="{% url 'students:student_list' %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                <a class="page-link" href="{% url 'students:student_list' %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">{{ num }}</a>
             </li>
             {% endfor %}
 
             {% if students.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{% url 'students:student_list' %}?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next">
+                <a class="page-link" href="{% url 'students:student_list' %}?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
                     <span aria-hidden="true">»</span>
                 </a>
             </li>
             {% else %}
             <li class="page-item disabled">
-                <a class="page-link" href="#" aria-label="Next">
+                <a class="page-link" href="#" aria-label="Next" style="color: #8892b0; background-color: #0a192f; border-color: #1e90ff;">
                     <span aria-hidden="true">»</span>
                 </a>
             </li>
@@ -207,8 +201,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     datasets: [{
                         data: {{ grade_data.grade_data.data|safe }},
                         backgroundColor: [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-                            '#FF9F40', '#8AC24A', '#FF5722', '#607D8B', '#9C27B0'
+                            '#1e90ff', '#87ceeb', '#4169e1', '#4682b4', '#6a5acd',
+                            '#483d8b', '#00b7eb', '#1e90ff', '#00ced1', '#20b2aa'
                         ],
                         borderWidth: 1
                     }]
@@ -263,6 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
 <style>
 .grade-chart-container {
     position: relative;
@@ -275,101 +270,251 @@ document.addEventListener('DOMContentLoaded', function() {
     flex-wrap: wrap;
     gap: 0.2rem;
     justify-content: center;
+    color: #e6e6e6;
+}
+
+/* Prevent vertical scrollbar and customize scrollbar appearance */
+.table-responsive {
+    overflow-y: auto; /* Allow vertical scrolling if content overflows */
+    -ms-overflow-style: none; /* Hide scrollbar in IE and Edge */
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+}
+
+.table-responsive::-webkit-scrollbar {
+    display: none; /* Hide scrollbar in Chrome, Safari, and Opera */
 }
 
 .table {
     width: 100%;
-    table-layout: auto; /* Allow columns to adjust based on content */
+    table-layout: auto;
+    background-color: transparent;
+    color: #e6e6e6;
 }
 
-.table th, .table td {
-    vertical-align: middle;
-    color:rgb(78, 73, 73) !important; /* Light gray for table headers and data */
-    padding: 8px; /* Add padding for better spacing */
+.table th {
+    background-color: #0a192f;
+    color: #1e90ff;
+    font-weight: bold;
+    padding: 10px;
+    text-align: center;
+}
+
+.table td {
+    background-color: #1c2526;
+    color: #e6e6e6;
+    padding: 8px;
+    text-align: center;
 }
 
 .table .text-muted {
-    color:rgb(5, 5, 5) !important; /* Light gray for "No students found" text */
+    color: #8892b0;
 }
 
 /* Minimum widths for columns to prevent cramping */
 .table th.col-min-width, .table td {
-    min-width: 120px; /* Standard minimum width for most columns */
+    min-width: 120px;
 }
 
 .table th.col-dept-width, .table td:nth-child(5) {
-    min-width: 150px; /* Extra space for Department column */
+    min-width: 150px;
 }
 
 .table th.col-chart-width, .table td:nth-child(8) {
-    min-width: 140px; /* Space for Grade Distribution charts */
+    min-width: 140px;
 }
 
 .table th.col-actions-width, .table td:nth-child(9) {
-    min-width: 180px; /* Space for action buttons */
+    min-width: 180px;
 }
 
-/* Ensure headers are white */
+/* Ensure headers are styled */
 h2 {
-    color:rgb(238, 228, 228) !important;
+    color: #e6e6e6;
+    font-family: 'Chalkduster', cursive;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* Card background for contrast */
-.card {
-    background-color: rgba(239, 234, 234, 0.3) !important; /* Darker background for chalkboard effect */
+.card.bg-dark-blue {
+    background-color: #0a192f;
+    border: 1px solid #1e90ff;
 }
 
 /* Style for search input */
 .input-group-text {
-    background-color: rgba(0, 0, 0, 0.1) !important; /* Semi-transparent background */
-    color:rgb(14, 12, 12) !important; /* White icon for contrast */
-    border-color:rgb(244, 239, 239) !important;
+    background-color: #0a192f;
+    color: #e6e6e6;
+    border: 1px solid #1e90ff;
 }
 
 .search-input {
-    background-color: rgba(255, 255, 255, 0.1) !important; /* Semi-transparent background */
-    color: #ffffff !important; /* White text */
-    border-color: #ffffff !important;
+    background-color: #1c2526;
+    color: #e6e6e6;
+    border: 1px solid #1e90ff;
 }
 
 .search-input::placeholder {
-    color: #cccccc !important; /* Light gray for placeholder text */
+    color: #8892b0;
 }
 
 .search-input:focus {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: #ffffff !important;
-    border-color: #ffeb3b !important; /* Yellow border on focus (chalk accent) */
-    box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
+    background-color: #0a192f;
+    color: #e6e6e6;
+    border-color: #1e90ff;
+    box-shadow: 0 0 0 0.25rem rgba(30, 144, 255, 0.25);
 }
 
 /* Ensure alert text is readable */
 .alert {
-    color: #000000 !important; /* Black text for alerts for contrast */
+    color: #e6e6e6;
+    background-color: #1c2526;
+    border: 1px solid #1e90ff;
+}
+
+.alert-success {
+    background-color: rgba(30, 144, 255, 0.1);
+}
+
+.alert-danger {
+    background-color: rgba(220, 20, 60, 0.1);
 }
 
 /* Style for badges in the table */
 .badge {
-    color: #ffffff !important; /* White text for badges */
+    color: #e6e6e6;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.badge.bg-success {
+    background-color: #1e90ff;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545;
 }
 
 /* Style for pagination links */
 .page-link {
-    color: #ffffff !important; /* White text for pagination links */
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    border-color: #ffffff !important;
+    color: #e6e6e6;
+    background-color: #0a192f;
+    border-color: #1e90ff;
 }
 
 .page-item.active .page-link {
-    background-color: #ffeb3b !important; /* Yellow for active page */
-    color: #000000 !important; /* Black text for contrast */
-    border-color: #ffeb3b !important;
+    background-color: #1e90ff;
+    color: #0a192f;
+    border-color: #1e90ff;
 }
 
 .page-item.disabled .page-link {
-    color: #cccccc !important; /* Light gray for disabled links */
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    border-color: #cccccc !important;
+    color: #8892b0;
+    background-color: #1c2526;
+    border-color: #8892b0;
+}
+
+/* Action buttons */
+.btn-primary {
+    background-color: transparent;
+    border: 1px solid #1e90ff;
+    color: #1e90ff;
+}
+
+.btn-primary:hover {
+    color: #0a192f;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: #1e90ff;
+    transition: all 0.4s ease;
+    z-index: -1;
+}
+
+.btn-primary:hover::before {
+    left: 0;
+}
+
+.btn-success {
+    background-color: transparent;
+    border: 1px solid #1e90ff;
+    color: #1e90ff;
+}
+
+.btn-success:hover {
+    color: #0a192f;
+}
+
+.btn-success::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: #1e90ff;
+    transition: all 0.4s ease;
+    z-index: -1;
+}
+
+.btn-success:hover::before {
+    left: 0;
+}
+
+.btn-warning {
+    background-color: transparent;
+    border: 1px solid #ffd700;
+    color: #ffd700;
+}
+
+.btn-warning:hover {
+    color: #0a192f;
+}
+
+.btn-warning::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: #ffd700;
+    transition: all 0.4s ease;
+    z-index: -1;
+}
+
+.btn-warning:hover::before {
+    left: 0;
+}
+
+.btn-danger {
+    background-color: transparent;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+}
+
+.btn-danger:hover {
+    color: #0a192f;
+}
+
+.btn-danger::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: #dc3545;
+    transition: all 0.4s ease;
+    z-index: -1;
+}
+
+.btn-danger:hover::before {
+    left: 0;
 }
 </style>
 {% endblock %}

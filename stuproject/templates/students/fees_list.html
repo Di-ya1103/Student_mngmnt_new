@@ -1,138 +1,219 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fees List</title>
-    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #212529;
-        }
-        .container h2, .form-label, .form-check-label {
-            color: #ffffff !important; /* White for headings and labels */
-        }
-        .table td, .table th {
-            color: #ffffff !important; /* White for table headers and data */
-        }
-        .pagination .page-link {
-            color: #ffffff;
-            background-color: #343a40;
-            border-color: #495057;
-        }
-        .pagination .page-item.active .page-link {
-            background-color: #007bff;
-            border-color: #007bff;
-        }
-        .pagination .page-link:hover {
-            background-color: #495057;
-        }
-    </style>
-</head>
-<body>
-<div class="container mt-5">
-    <h2>Fees List</h2>
+{% block title %}Fees List - Student Management System{% endblock %}
 
+{% block content %}
+<div class="container mt-5">
     <!-- Messages -->
     {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        {% endfor %}
+    </div>
     {% endif %}
 
     <!-- Search and Filter -->
-    <form method="get" class="mb-4">
-        <div class="row">
-            <div class="col-md-4">
-                <input type="text" name="search" class="form-control" placeholder="Search by name or roll number" value="{{ search_query }}">
-            </div>
-            <div class="col-md-4">
-                <select name="student" class="form-control">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form method="get" class="d-flex gap-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-dark-blue text-white"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control search-input" placeholder="Search by name or roll number" value="{{ search_query }}">
+                </div>
+                <select name="student" class="form-select">
                     <option value="">All Students</option>
                     {% for student in students %}
-                        <option value="{{ student.id }}" {% if selected_student == student.id|stringformat:"s" %}selected{% endif %}>
-                            {{ student.first_name }} {{ student.last_name }} ({{ student.roll_number }})
-                        </option>
+                    <option value="{{ student.id }}" {% if selected_student == student.id|stringformat:"s" %}selected{% endif %}>{{ student.first_name }} {{ student.last_name }} ({{ student.roll_number }})</option>
                     {% endfor %}
                 </select>
-            </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-primary">Search</button>
-                <a href="{% url 'students:add_fee' %}" class="btn btn-success">Add Fee</a>
-            </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+            </form>
         </div>
-    </form>
+        <div class="col-md-6 text-md-end">
+            <a href="{% url 'students:add_fee' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Fee</a>
+        </div>
+    </div>
 
     <!-- Fees Table -->
-    <table class="table table-dark table-striped">
-        <thead>
-            <tr>
-                <th>Student Name</th>
-                <th>Amount</th>
-                <th>Due Date</th>
-                <th>Payment Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for fee in fees %}
-                <tr>
-                    <td>{{ fee.student.first_name }} {{ fee.student.last_name }} ({{ fee.student.roll_number }})</td>
-                    <td>{{ fee.amount }}</td>
-                    <td>{{ fee.due_date }}</td>
-                    <td>{{ fee.is_paid|yesno:"Paid,Unpaid" }}</td>
-                    <td>
-                        <a href="{% url 'students:edit_fee' fee.id %}" class="btn btn-sm btn-warning">Edit</a>
-                        <a href="{% url 'students:delete_fee' fee.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this fee?')">Delete</a>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="5" style="color: #ffffff;">No fees found.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white">Fees List</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr style="background-color: #0a192f; color: #1e90ff;">
+                        <th>Student Name</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Payment Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee in fees %}
+                    <tr style="background-color: #1c2526; color: #e6e6e6;">
+                        <td>{{ fee.student.first_name }} {{ fee.student.last_name }} ({{ fee.student.roll_number }})</td>
+                        <td>{{ fee.amount }}</td>
+                        <td>{{ fee.due_date }}</td>
+                        <td>{{ fee.is_paid|yesno:"Paid,Unpaid" }}</td>
+                        <td>
+                            <a href="{% url 'students:edit_fee' fee.id %}" class="btn btn-sm btn-primary me-2" title="Edit">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'students:delete_fee' fee.id %}" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this fee?');">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr style="background-color: #1c2526; color: #e6e6e6;">
+                        <td colspan="5" class="text-center text-muted">No fees found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-    <!-- Pagination -->
+    <!-- Pagination Controls -->
     {% if fees.has_other_pages %}
-        <nav aria-label="Page navigation">
-            <ul class="pagination">
-                {% if fees.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}">« First</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ fees.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}">Previous</a></li>
-                {% endif %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if fees.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="{% url 'students:fees_list' %}?page={{ fees.previous_page_number }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}" aria-label="Previous" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
+                    <span aria-hidden="true">«</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Previous" style="color: #8892b0; background-color: #0a192f; border-color: #1e90ff;">
+                    <span aria-hidden="true">«</span>
+                </a>
+            </li>
+            {% endif %}
 
-                {% for num in fees.paginator.page_range %}
-                    {% if fees.number == num %}
-                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                    {% elif num > fees.number|add:'-3' and num < fees.number|add:'3' %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}">{{ num }}</a></li>
-                    {% endif %}
-                {% endfor %}
+            {% for num in fees.paginator.page_range %}
+            <li class="page-item {% if fees.number == num %}active{% endif %}">
+                <a class="page-link" href="{% url 'students:fees_list' %}?page={{ num }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">{{ num }}</a>
+            </li>
+            {% endfor %}
 
-                {% if fees.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ fees.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}">Next</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ fees.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}">Last »</a></li>
-                {% endif %}
-            </ul>
-        </nav>
+            {% if fees.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{% url 'students:fees_list' %}?page={{ fees.next_page_number }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}" aria-label="Next" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
+                    <span aria-hidden="true">»</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Next" style="color: #8892b0; background-color: #0a192f; border-color: #1e90ff;">
+                    <span aria-hidden="true">»</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
     {% endif %}
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<style>
+/* Override table styles for visibility */
+.table {
+    width: 100%;
+    table-layout: auto;
+    background-color: #1c2526 !important;
+    border: 1px solid #1e90ff;
+}
+
+.table th {
+    color: #1e90ff !important;
+    background-color: #0a192f !important;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    padding: 10px;
+}
+
+.table td {
+    color: #e6e6e6 !important;
+    background-color: #1c2526 !important;
+    padding: 8px;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.table .text-muted {
+    color: #8892b0 !important;
+}
+
+/* Ensure headers are white */
+h2 {
+    color: #e6e6e6 !important;
+}
+
+/* Card background for contrast */
+.card.bg-dark-blue {
+    background-color: #0a192f !important;
+    border: 1px solid #1e90ff;
+}
+
+/* Style for search input */
+.input-group-text {
+    background-color: #0a192f !important;
+    color: #e6e6e6 !important;
+    border: 1px solid #1e90ff !important;
+}
+
+.search-input {
+    background-color: #1c2526 !important;
+    color: #e6e6e6 !important;
+    border: 1px solid #1e90ff !important;
+}
+
+.search-input::placeholder {
+    color: #8892b0 !important;
+}
+
+.search-input:focus {
+    background-color: #0a192f !important;
+    color: #e6e6e6 !important;
+    border-color: #1e90ff !important;
+    box-shadow: 0 0 0 0.25rem rgba(30, 144, 255, 0.25) !important;
+}
+
+.form-select {
+    background-color: #1c2526 !important;
+    color: #e6e6e6 !important;
+    border: 1px solid #1e90ff !important;
+}
+
+.form-select:focus {
+    background-color: #0a192f !important;
+    color: #e6e6e6 !important;
+    border-color: #1e90ff !important;
+    box-shadow: 0 0 0 0.25rem rgba(30, 144, 255, 0.25) !important;
+}
+
+/* Style for pagination links */
+.page-link {
+    color: #e6e6e6 !important;
+    background-color: #0a192f !important;
+    border-color: #1e90ff !important;
+}
+
+.page-item.active .page-link {
+    background-color: #1e90ff !important;
+    color: #0a192f !important;
+    border-color: #1e90ff !important;
+}
+
+.page-item.disabled .page-link {
+    color: #8892b0 !important;
+    background-color: #1c2526 !important;
+    border-color: #8892b0 !important;
+}
+</style>
 {% endblock %}

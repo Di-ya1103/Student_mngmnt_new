@@ -3,7 +3,7 @@
 {% block title %}Student Details - {{ student }} - Student Management System{% endblock %}
 
 {% block content %}
-<div class="container mt-5" data-aos="fade-up">
+<div class="container mt-5"> <!-- Removed data-aos="fade-up" -->
     <h2>Student Details - {{ student }}</h2>
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -21,8 +21,8 @@
             <p><strong>Last Name:</strong> {{ student.last_name }}</p>
             <p><strong>Roll Number:</strong> {{ student.roll_number }}</p>
             <p><strong>Email:</strong> {{ student.email }}</p>
-            <p><strong>Department:</strong> {{ student_dept_course.department.name|default:"Not assigned" }}</p>
-            <p><strong>Course:</strong> {{ student_dept_course.course.name|default:"Not assigned" }}</p>
+            <p><strong>Department:</strong> {{ student_dept_course.department.name|default:"  " }}</p>
+            <p><strong>Course:</strong> {{ student_dept_course.course.name|default:"  " }}</p>
             <p><strong>Is Active:</strong> {{ student.is_active|yesno:"Yes,No" }}</p>
         </div>
     </div>
@@ -69,6 +69,47 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    {% if results.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if results.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="{% url 'students:student_detail' student.id %}?page={{ results.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">«</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Previous">
+                    <span aria-hidden="true">«</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in results.paginator.page_range %}
+            <li class="page-item {% if results.number == num %}active{% endif %}">
+                <a class="page-link" href="{% url 'students:student_detail' student.id %}?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if results.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{% url 'students:student_detail' student.id %}?page={{ results.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">»</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Next">
+                    <span aria-hidden="true">»</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 
     <!-- Action Buttons -->
     <div class="mt-4">
@@ -137,6 +178,25 @@ h2, h4 {
 /* Text inside card for better visibility */
 .card-body p {
     color: #d3d3d3 !important; /* Light gray for card text */
+}
+
+/* Style for pagination links */
+.page-link {
+    color: #d3d3d3 !important; /* Light gray for pagination text */
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-color: #ffffff !important;
+}
+
+.page-item.active .page-link {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #ffffff !important;
+}
+
+.page-item.disabled .page-link {
+    color: #8892b0 !important;
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    border-color: #8892b0 !important;
 }
 </style>
 {% endblock %}

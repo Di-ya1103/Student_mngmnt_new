@@ -88,6 +88,6 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication settings
-LOGIN_URL = 'students:login'  # URL to redirect unauthenticated users
+LOGIN_URL = '/students/accounts/login/'  # URL to redirect unauthenticated users
 LOGIN_REDIRECT_URL = 'students:student_list'  # URL to redirect after login
-LOGOUT_REDIRECT_URL = 'students:login'  # URL to redirect after logout
+LOGOUT_REDIRECT_URL = '/students/accounts/login/' # URL to redirect after logout

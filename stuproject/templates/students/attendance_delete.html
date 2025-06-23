@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Attendance - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Delete Confirmation -->
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white">Delete Attendance</h2>
+        <p class="text-white">Are you sure you want to delete the attendance record for <strong>{{ attendance.student.first_name }} {{ attendance.student.last_name }}</strong> on <strong>{{ attendance.date|date:"Y-m-d" }}</strong> for <strong>{{ attendance.subject.name }}</strong> (Status: <strong>{{ attendance.status }}</strong>)?</p>
+        <form method="POST" action="">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Confirm Delete</button>
+            <a href="{% url 'students:attendance_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
