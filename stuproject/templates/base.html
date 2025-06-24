@@ -37,29 +37,65 @@
             --danger-color: #dc3545;
             --warning-color: #ffc107;
             --info-color: #17a2b8;
-            --chalkboard-bg: #1a3c34; /* Dark green-black chalkboard color */
-            --chalk-text: #e6e6e6; /* Chalk-like white */
-            --chalk-accent: #ffeb3b; /* Yellow chalk accent */
+            --chalkboard-bg: #1a3c34;
+            --chalk-text: #e6e6e6;
+            --chalk-accent: #ffeb3b;
         }
 
         body {
-            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%); /* Dark gradient from image */
+            background: var(--dark-blue); /* Solid dark blue background */
             color: var(--chalk-text);
-            font-family: 'Schoolbell', cursive; /* Chalkboard font */
+            font-family: 'Schoolbell', cursive;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            position: relative;
+            /* Removed overflow: hidden to allow scrolling */
+        }
+
+        #particle-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .bond-particle {
+            position: absolute;
+            background: var(--chalk-text); /* White particles */
+            border-radius: 50%;
+            animation: bondFloat 20s linear infinite;
+        }
+
+        .bond-line {
+            position: absolute;
+            background: rgba(230, 230, 230, 0.5); /* Semi-transparent white line for bond */
+            transform-origin: center;
+            animation: bondRotate 10s linear infinite;
+        }
+
+        @keyframes bondFloat {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(var(--x-offset), var(--y-offset)); opacity: 0.8; }
+        }
+
+        @keyframes bondRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Improved Navbar */
         .navbar {
-            background: rgba(0, 0, 0, 0.8); /* Semi-transparent black for chalkboard theme */
+            background: rgba(0, 0, 0, 0.8);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
             transition: all 0.4s cubic-bezier(0.645, 0.045, 0.355, 1);
         }
 
         .navbar-brand {
-            font-family: 'Chalkduster', cursive; /* Fancy chalkboard font for brand */
+            font-family: 'Chalkduster', cursive;
             font-weight: 600;
             letter-spacing: 1px;
             position: relative;
@@ -176,7 +212,7 @@
 
         /* Cards */
         .card {
-            background: rgba(0, 0, 0, 0.3); /* Darker background for chalkboard effect */
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
             transition: all 0.4s cubic-bezier(0.645, 0.045, 0.355, 1);
@@ -230,7 +266,7 @@
 
         /* Tables */
         .table {
-            color: var(--chalk-text); /* Chalk-like white for table content */
+            color: var(--chalk-text);
             border-color: rgba(255, 255, 255, 0.2);
             background: rgba(0, 0, 0, 0.3);
         }
@@ -245,7 +281,7 @@
         }
 
         .table td {
-            color: var(--chalk-text); /* Ensure table data is chalk-like white */
+            color: var(--chalk-text);
         }
 
         /* Remove all table animations and effects */
@@ -254,16 +290,16 @@
         }
 
         .table tbody tr:hover {
-            background: none; /* Remove hover effect */
+            background: none;
         }
 
         /* Remove table borders for a cleaner chalkboard look */
         .table, .table th, .table td {
-            border: none !important; /* Remove borders */
+            border: none !important;
         }
 
         .table tbody tr {
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.3); /* Dashed line for separation */
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
         }
 
         /* Footer */
@@ -292,7 +328,7 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--chalkboard-bg);
+            background: var(--dark-blue); /* Match background */
         }
 
         ::-webkit-scrollbar-thumb {
@@ -342,6 +378,9 @@
     </style>
 </head>
 <body>
+    <!-- Particle Container -->
+    <div id="particle-container"></div>
+
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
@@ -412,15 +451,15 @@
                             </a>
                         </li>
                         {% endif %}
-                        <li class="nav-item">
-                            <form action="{% url 'auth:login' %}" method="POST" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="logout-btn">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                    Logout
-                                </button>
-                            </form>
-                        </li>
+                       <li class="nav-item">
+    <form action="{% url 'auth:logout' %}" method="POST" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+        </button>
+    </form>
+</li>
                     {% else %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'auth:login' %}">
@@ -487,6 +526,70 @@
         
         window.addEventListener('load', animateOnScroll);
         window.addEventListener('scroll', animateOnScroll);
+
+        // Create bond-like floating particles
+        function createBondParticles() {
+            const particleContainer = document.getElementById('particle-container');
+            const bondCount = 20; // Number of bond pairs
+
+            for (let i = 0; i < bondCount; i++) {
+                // Create bond pair container
+                const bond = document.createElement('div');
+                bond.style.position = 'absolute';
+
+                // Random center position
+                const centerX = Math.random() * 100;
+                const centerY = Math.random() * 100;
+                bond.style.left = `${centerX}vw`;
+                bond.style.top = `${centerY}vh`;
+
+                // First particle
+                const particle1 = document.createElement('div');
+                particle1.className = 'bond-particle';
+                const size1 = Math.random() * 10 + 5;
+                particle1.style.width = `${size1}px`;
+                particle1.style.height = `${size1}px`;
+                particle1.style.left = `-${size1 / 2}px`;
+                particle1.style.top = `-${size1 / 2}px`;
+
+                // Second particle
+                const particle2 = document.createElement('div');
+                particle2.className = 'bond-particle';
+                const size2 = Math.random() * 10 + 5;
+                particle2.style.width = `${size2}px`;
+                particle2.style.height = `${size2}px`;
+                particle2.style.left = `${size1 / 2 + 20}px`; // Fixed distance for bond
+                particle2.style.top = `-${size2 / 2}px`;
+
+                // Bond line
+                const line = document.createElement('div');
+                line.className = 'bond-line';
+                const lineLength = 20 + Math.random() * 10; // Random bond length
+                line.style.width = `${lineLength}px`;
+                line.style.height = '1px';
+                line.style.left = `${size1 / 2}px`;
+                line.style.top = '50%';
+
+                // Add particles and line to bond container
+                bond.appendChild(particle1);
+                bond.appendChild(particle2);
+                bond.appendChild(line);
+
+                // Random movement offsets
+                const xOffset = (Math.random() - 0.5) * 50; // -25vw to +25vw
+                const yOffset = (Math.random() - 0.5) * 50; // -25vh to +25vh
+                bond.style.setProperty('--x-offset', `${xOffset}vw`);
+                bond.style.setProperty('--y-offset', `${yOffset}vh`);
+
+                // Random animation delay
+                bond.style.animationDelay = `${Math.random() * 10}s`;
+
+                particleContainer.appendChild(bond);
+            }
+        }
+
+        // Initialize particles on load
+        window.addEventListener('load', createBondParticles);
     </script>
 </body>
 </html>

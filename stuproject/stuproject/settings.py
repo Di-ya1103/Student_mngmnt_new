@@ -90,4 +90,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Authentication settings
 LOGIN_URL = '/students/accounts/login/'  # URL to redirect unauthenticated users
 LOGIN_REDIRECT_URL = 'students:student_list'  # URL to redirect after login
-LOGOUT_REDIRECT_URL = '/students/accounts/login/' # URL to redirect after logout
+#LOGOUT_REDIRECT_URL = '/students/accounts/login/' # URL to redirect after logout
+LOGOUT_REDIRECT_URL = '/students/accounts/login/'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'diya.dave1103@gmail.com'  # Replace with your email
+EMAIL_HOST_PASSWORD = 'pqhpuwmppnrawdtb'  # Replace with your app-specific password
+DEFAULT_FROM_EMAIL = 'diya.dave1103@gmail.com'  # Replace with your email
+
+# Site configuration for password reset links
+SITE_ID = 1  # Ensure you have a Site object in the admin with ID=1
+

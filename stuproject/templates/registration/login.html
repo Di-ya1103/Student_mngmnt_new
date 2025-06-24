@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Login - Student Management System{% endblock %}
 
@@ -6,8 +7,8 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card p-4" data-aos="fade-up">
-                <h2 class="text-center mb-4" style="font-family: 'Chalkduster', cursive; color: var(--chalk-text); text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);">Login</h2>
+            <div class="card p-4 shadow-sm" data-aos="fade-up">
+                <h2 class="text-center mb-4" style="font-family: 'Chalkduster', cursive; color: #ffffff; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);">Login</h2>
                 {% if messages %}
                 <div class="alert-container">
                     {% for message in messages %}
@@ -29,28 +30,77 @@
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <input type="text" class="form-control search-input" id="username" name="username" required>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password" class="form-control search-input" id="password" name="password" required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Login</button>
                 </form>
+                <div class="text-center mt-3">
+                    <a href="{% url 'auth:password_reset' %}" class="text-decoration-none">Forgot Password?</a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-/* Override form label color for Username and Password */
-.form-label {
-    color: #d3d3d3 !important; /* Light gray to match profile.html table content */
+/* Card background for chalkboard theme */
+.card {
+    background-color: rgba(31, 26, 60, 0.9) !important; /* Dark blue-black to match profile.html */
+    border-color: #ffffff !important; /* White border for contrast */
 }
 
-/* Ensure error messages and other text are visible */
+/* Form label and input text */
+.form-label {
+    color: #ffffff !important; /* White for labels to match profile.html */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Stronger shadow for chalk-like effect */
+}
+
+/* Input fields */
+.search-input {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* Semi-transparent background */
+    color: #ffffff !important; /* White text */
+    border-color: #ffffff !important; /* White border */
+}
+
+.search-input:focus {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-color: #ffeb3b !important; /* Yellow border on focus to match theme */
+    box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
+}
+
+/* Alert text for error messages */
 .alert, .alert p {
-    color: var(--chalk-text) !important; /* White for error messages */
+    color: #000000 !important; /* Black text for contrast in alerts */
+    text-shadow: none !important; /* No shadow for alert text */
+}
+
+/* Forgot Password link */
+.text-decoration-none {
+    color: #d3d3d3 !important; /* Light gray to match profile.html */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+}
+
+.text-decoration-none:hover {
+    color: #ffeb3b !important; /* Yellow on hover to match theme */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Stronger shadow on hover */
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+    color: #ffffff !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Subtle shadow for buttons */
+}
+
+.btn-primary:hover {
+    background-color: #0056b3 !important;
+    border-color: #0056b3 !important;
 }
 </style>
 {% endblock %}

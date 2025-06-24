@@ -10,6 +10,7 @@ from datetime import datetime
 from decimal import Decimal
 import logging
 from django.db import transaction
+from django.contrib.auth.views import PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -1193,41 +1194,89 @@ def delete_result(request, result_id):
     messages.success(request, 'Result deleted successfully!')
     return redirect('students:results_list')
 
+# File: C:\Student_mngmnt_new\stuproject\students\views.py
+# Line: ~1212 (in student_detail view)
+
 @login_required
 def student_detail(request, student_id):
     if request.user.is_superuser:
         student = get_object_or_404(Student, id=student_id)
         results = StudentResult.objects.filter(student=student)
-        try:
-            student_dept_course = student.department_course
-        except StudentDepartmentCourse.DoesNotExist:
-            student_dept_course = None
-            print(f"No department/course assignment found for student ID {student_id}")
     else:
         try:
             profile = StudentProfile.objects.get(user=request.user)
             student = profile.student
             if student.id != student_id:
-                messages.error(request, 'You are not authorized to view this student\'s details.')
+                messages.error(request, "You are not authorized to view this student's details.")
                 return redirect('students:profile')
             results = StudentResult.objects.filter(student=student)
-            try:
-                student_dept_course = student.department_course
-            except StudentDepartmentCourse.DoesNotExist:
-                student_dept_course = None
-                print(f"No department/course assignment found for student ID {student_id}")
         except StudentProfile.DoesNotExist:
-            messages.error(request, 'No student profile found for your account.')
+            messages.error(request, "No student profile found for your account.")
             return redirect('students:student_list')
 
-    grades = [result.grade for result in results]
-    grade_counts = {grade: grades.count(grade) for grade in set(grades)} if grades else {}
-    grade_data = {
-        'labels': list(grade_counts.keys()),
-        'data': list(grade_counts.values()),
-    }
+    # Get selected semesters and subjects from GET parameters for filtering
+    selected_semester_ids = request.GET.getlist('semesters')
+    selected_subject_ids = request.GET.getlist('subjects')
+    selected_attendance_subject_ids = request.GET.getlist('attendance_subjects')
+    attendance_start_date = request.GET.get('attendance_start_date')
+    attendance_end_date = request.GET.get('attendance_end_date')
+    
+    # Get all semesters and subjects for the student
+    all_semesters = StudentResult.objects.filter(student=student).values_list('semester', flat=True).distinct().order_by('semester')
+    all_subjects = Subject.objects.filter(studentresult__student=student).distinct()
+    all_attendance_subjects = Subject.objects.filter(attendance__student=student).distinct()
 
-    # Pagination for results (5 results per page)
+    # Filter results by semesters and subjects
+    if selected_semester_ids or selected_subject_ids:
+        query = Q()
+        if selected_semester_ids:
+            query &= Q(semester__in=selected_semester_ids)
+        if selected_subject_ids:
+            query &= Q(subject__in=selected_subject_ids)
+        results = results.filter(query).order_by('semester', 'subject__name')
+        semesters_to_display = selected_semester_ids if selected_semester_ids else all_semesters
+    else:
+        semesters_to_display = all_semesters
+
+    # Prepare semester-wise data
+    semester_data = []
+    for semester in semesters_to_display:
+        semester_results = results.filter(semester=semester)
+        if semester_results.exists():
+            grades = [result.grade for result in semester_results if result.grade]
+            grade_counts = {grade: grades.count(grade) for grade in set(grades) if grade}
+            grade_pairs = sorted([(grade, count) for grade, count in grade_counts.items()], key=lambda x: x[0])
+            semester_data.append({
+                'semester': semester,
+                'results': semester_results,
+                'grade_data': {
+                    'labels': list(grade_counts.keys()),
+                    'data': list(grade_counts.values()),
+                },
+                'grade_pairs': grade_pairs,
+            })
+
+    # Get attendance records with subject and date filter
+    attendance_query = Attendance.objects.filter(student=student).order_by('-date')
+    if selected_attendance_subject_ids:
+        attendance_query = attendance_query.filter(subject__in=selected_attendance_subject_ids)
+    if attendance_start_date:
+        attendance_query = attendance_query.filter(date__gte=attendance_start_date)
+    if attendance_end_date:
+        attendance_query = attendance_query.filter(date__lte=attendance_end_date)
+    attendances = attendance_query.select_related('subject')
+
+    # Get student's fees
+    fees = Fee.objects.filter(student=student).order_by('due_date')
+
+    # Get the student's department and course
+    try:
+        student_dept_course = student.department_course
+    except StudentDepartmentCourse.DoesNotExist:
+        student_dept_course = None
+        print(f"No department/course assignment found for student ID {student_id}")
+
+    # Paginate results
     paginator = Paginator(results, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -1235,86 +1284,148 @@ def student_detail(request, student_id):
     context = {
         'student': student,
         'results': page_obj,
-        'grade_data': grade_data,
+        'grade_data': {'labels': [], 'data': []},  # Overall grade data (empty for now)
         'student_dept_course': student_dept_course,
+        'all_semesters': all_semesters,
+        'selected_semester_ids': selected_semester_ids,
+        'all_subjects': all_subjects,
+        'selected_subject_ids': selected_subject_ids,
+        'semester_data': semester_data,
+        'all_attendance_subjects': all_attendance_subjects,
+        'selected_attendance_subject_ids': selected_attendance_subject_ids,
+        'selected_attendance_start_date': attendance_start_date,
+        'selected_attendance_end_date': attendance_end_date,
+        'attendances': attendances,
+        'fees': fees,
     }
     return render(request, 'students/student_detail.html', context)
-
 @login_required
 def profile(request):
     try:
         profile = StudentProfile.objects.get(user=request.user)
         student = profile.student
-        
-        # Get selected semesters from GET parameters for filtering
-        selected_semester_ids = request.GET.getlist('semesters')
-        
-        # Get all semesters for the student
-        all_semesters = StudentResult.objects.filter(
-            student=student
-        ).values_list('semester', flat=True).distinct().order_by('semester')
-        
-        # Filter by semesters
-        if selected_semester_ids:
-            results = StudentResult.objects.filter(
-                student=student, 
-                semester__in=selected_semester_ids
-            ).order_by('semester', 'subject__name')
-            semesters_to_display = selected_semester_ids
-        else:
-            results = StudentResult.objects.filter(
-                student=student
-            ).order_by('semester', 'subject__name')
-            semesters_to_display = all_semesters
-        
-        # Prepare data for grade distribution per semester
-        semester_data = []
-        for semester in semesters_to_display:
-            semester_results = results.filter(semester=semester)
-            
-            if semester_results.exists():
-                grades = [result.grade for result in semester_results if result.grade]
-                grade_counts = {grade: grades.count(grade) for grade in set(grades) if grade}
-                
-                # Create grade pairs for fallback display
-                grade_pairs = sorted(
-                    [(grade, count) for grade, count in grade_counts.items()],
-                    key=lambda x: x[0]  # Sort by grade
-                )
-                
-                semester_data.append({
-                    'semester': semester,
-                    'results': semester_results,
-                    'grade_data': {
-                        'labels': list(grade_counts.keys()),
-                        'data': list(grade_counts.values()),
-                    },
-                    'grade_pairs': grade_pairs,
-                    
-                })
-                total_attendance = Attendance.objects.filter(student=student).count()
-                total_possible_days = 50  # Example: Adjust this based on your logic (e.g., number of days in a semester)
-                attendance_percentage = (total_attendance / total_possible_days * 100) if total_possible_days > 0 else 0
-                attendance_percentage = round(attendance_percentage, 2)
-
-        # Get the student's department and course
-        try:
-            student_dept_course = student.department_course
-        except StudentDepartmentCourse.DoesNotExist:
-            student_dept_course = None
-        
-        context = {
-            'student': student,
-            'semester_data': semester_data,
-            'all_semesters': all_semesters,
-            'selected_semester_ids': selected_semester_ids,
-            'student_dept_course': student_dept_course,
-            'attendance_percentage': attendance_percentage,
-        }
-        return render(request, 'students/profile.html', context)
     except StudentProfile.DoesNotExist:
-        messages.error(request, 'No student profile found for your account.')
+        messages.error(request, "No student profile found for your account.")
         return redirect('students:student_list')
+
+    try:
+        student_dept_course = student.department_course
+    except StudentDepartmentCourse.DoesNotExist:
+        student_dept_course = None
+
+    context = {
+        'student': student,
+        'student_dept_course': student_dept_course,
+    }
+    return render(request, 'students/profile.html', context)
+
+@login_required
+def attendance(request):
+    try:
+        profile = StudentProfile.objects.get(user=request.user)
+        student = profile.student
+    except StudentProfile.DoesNotExist:
+        messages.error(request, "No student profile found for your account.")
+        return redirect('students:student_list')
+
+    selected_attendance_subject_ids = request.GET.getlist('attendance_subjects')
+    attendance_start_date = request.GET.get('attendance_start_date')
+    attendance_end_date = request.GET.get('attendance_end_date')
+    all_attendance_subjects = Subject.objects.filter(attendance__student=student).distinct()
+
+    attendance_query = Attendance.objects.filter(student=student).order_by('-date')
+    if selected_attendance_subject_ids:
+        attendance_query = attendance_query.filter(subject__in=selected_attendance_subject_ids)
+    if attendance_start_date:
+        attendance_query = attendance_query.filter(date__gte=attendance_start_date)
+    if attendance_end_date:
+        attendance_query = attendance_query.filter(date__lte=attendance_end_date)
+    attendances = attendance_query.select_related('subject')
+
+    context = {
+        'student': student,
+        'all_attendance_subjects': all_attendance_subjects,
+        'selected_attendance_subject_ids': selected_attendance_subject_ids,
+        'selected_attendance_start_date': attendance_start_date,
+        'selected_attendance_end_date': attendance_end_date,
+        'attendances': attendances,
+    }
+    return render(request, 'students/attendance.html', context)
+
+@login_required
+def fees(request):
+    try:
+        profile = StudentProfile.objects.get(user=request.user)
+        student = profile.student
+    except StudentProfile.DoesNotExist:
+        messages.error(request, "No student profile found for your account.")
+        return redirect('students:student_list')
+
+    fees = Fee.objects.filter(student=student).order_by('due_date')
+
+    context = {
+        'student': student,
+        'fees': fees,
+    }
+    return render(request, 'students/fees.html', context)
+
+@login_required
+def results(request):
+    try:
+        profile = StudentProfile.objects.get(user=request.user)
+        student = profile.student
+    except StudentProfile.DoesNotExist:
+        messages.error(request, "No student profile found for your account.")
+        return redirect('students:student_list')
+
+    selected_semester_ids = request.GET.getlist('semesters')
+    selected_subject_ids = request.GET.getlist('subjects')
+    all_semesters = StudentResult.objects.filter(student=student).values_list('semester', flat=True).distinct().order_by('semester')
+    all_subjects = Subject.objects.filter(studentresult__student=student).distinct()
+
+    results = StudentResult.objects.filter(student=student)
+    if selected_semester_ids or selected_subject_ids:
+        query = Q()
+        if selected_semester_ids:
+            query &= Q(semester__in=selected_semester_ids)
+        if selected_subject_ids:
+            query &= Q(subject__in=selected_subject_ids)
+        results = results.filter(query).order_by('semester', 'subject__name')
+        semesters_to_display = selected_semester_ids if selected_semester_ids else all_semesters
+    else:
+        semesters_to_display = all_semesters
+
+    semester_data = []
+    for semester in semesters_to_display:
+        semester_results = results.filter(semester=semester)
+        if semester_results.exists():
+            grades = [result.grade for result in semester_results if result.grade]
+            grade_counts = {grade: grades.count(grade) for grade in set(grades) if grade}
+            grade_pairs = sorted([(grade, count) for grade, count in grade_counts.items()], key=lambda x: x[0])
+            semester_data.append({
+                'semester': semester,
+                'results': semester_results,
+                'grade_data': {
+                    'labels': list(grade_counts.keys()),
+                    'data': list(grade_counts.values()),
+                },
+                'grade_pairs': grade_pairs,
+            })
+
+    paginator = Paginator(results, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'student': student,
+        'results': page_obj,
+        'all_semesters': all_semesters,
+        'selected_semester_ids': selected_semester_ids,
+        'all_subjects': all_subjects,
+        'selected_subject_ids': selected_subject_ids,
+        'semester_data': semester_data,
+    }
+    return render(request, 'students/results.html', context)
 
 @login_required
 @user_passes_test(superuser_required, login_url='login/')
@@ -1384,3 +1495,4 @@ def assign_department_course(request):
         "student_dept_courses": student_dept_courses,
     }
     return render(request, "assign_department_course.html", context)
+

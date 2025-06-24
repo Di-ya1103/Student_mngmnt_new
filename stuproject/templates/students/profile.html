@@ -6,20 +6,30 @@
 {% block content %}
 <div class="container mt-5 mb-5" data-aos="fade-up">
     <h2>Profile - {{ student }}</h2>
-    
+
+    <!-- Navigation Links -->
+    <nav class="nav nav-pills mb-4">
+        <a class="nav-link active" href="{% url 'students:profile' %}">Profile</a>
+        <a class="nav-link" href="{% url 'students:results' %}">Results</a>
+        <a class="nav-link" href="{% url 'students:fees' %}">Fees</a>
+        <a class="nav-link" href="{% url 'students:attendance' %}">Attendance</a>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- Student Details -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            {% if messages %}
-            <div class="alert-container">
-                {% for message in messages %}
-                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
             <p><strong>First Name:</strong> {{ student.first_name }}</p>
             <p><strong>Last Name:</strong> {{ student.last_name }}</p>
             <p><strong>Roll Number:</strong> {{ student.roll_number }}</p>
@@ -27,90 +37,8 @@
             <p><strong>Department:</strong> {{ student_dept_course.department.name|default:"Not assigned" }}</p>
             <p><strong>Course:</strong> {{ student_dept_course.course.name|default:"Not assigned" }}</p>
             <p><strong>Is Active:</strong> {{ student.is_active|yesno:"Yes,No" }}</p>
-            <p><strong>Attendance Percentage:</strong> {% if attendance_percentage is not None %}{{ attendance_percentage }}%{% else %}N/A{% endif %}</p>
         </div>
     </div>
-
-    <!-- Semester Filter -->
-    <div class="mb-4" data-aos="fade-right" data-aos-delay="200">
-        <form method="GET" class="d-flex gap-3 flex-wrap">
-            <div class="input-group" style="max-width: 300px;">
-                <span class="input-group-text"><i class="fas fa-filter"></i></span>
-                <select name="semesters" multiple class="form-select search-input" style="height: 100px;">
-                    {% for semester in all_semesters %}
-                    <option value="{{ semester }}" {% if semester in selected_semester_ids %}selected{% endif %}>
-                        Semester {{ semester }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Filter</button>
-            <a href="{% url 'students:profile' %}" class="btn btn-secondary">Clear Filter</a>
-        </form>
-    </div>
-
-    <!-- Semester-wise Results and Grade Distribution -->
-    {% for semester in semester_data %}
-    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:300 }}">
-        <div class="card-body">
-            <h4>Semester {{ semester.semester }}</h4>
-            
-            <!-- Grade Distribution Chart -->
-            <div class="mb-4">
-                <h5>Grade Distribution</h5>
-                {% if semester.grade_data.labels %}
-                <div class="grade-chart-container" style="max-width: 300px; max-height: 200px; margin: 0 auto;">
-                    <canvas id="gradeChart-semester-{{ semester.semester }}"></canvas>
-                </div>
-                <div id="gradeFallback-{{ semester.semester }}" class="grade-fallback" style="display: none;">
-                    {% for label, count in semester.grade_pairs %}
-                    <span class="badge bg-secondary">{{ label }}: {{ count }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-center text-muted">No grade data available for this semester.</p>
-                {% endif %}
-            </div>
-
-            <!-- Results Table -->
-            <h5>Results</h5>
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Score</th>
-                            <th>Grade</th>
-                            <th>Year</th>
-                            <th>Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for result in semester.results %}
-                        <tr>
-                            <td>{{ result.subject.name }}</td>
-                            <td>{{ result.score }}</td>
-                            <td>{{ result.grade }}</td>
-                            <td>{{ result.year }}</td>
-                            <td>{{ result.remarks }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">No results available for this semester.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% empty %}
-    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="400">
-        <div class="card-body">
-            <p class="text-center text-muted">No results available for this student.</p>
-        </div>
-    </div>
-    {% endfor %}
 
     <!-- Back Button -->
     <div class="mt-4">
@@ -118,159 +46,44 @@
     </div>
 </div>
 
-<!-- JavaScript for Grade Distribution Charts -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Function to render grade charts
-    function renderGradeCharts() {
-        {% for semester in semester_data %}
-        {% if semester.grade_data.labels %}
-        try {
-            const canvas = document.getElementById('gradeChart-semester-{{ semester.semester }}');
-            if (!canvas) {
-                console.log('Canvas not found for semester {{ semester.semester }}');
-                document.getElementById('gradeFallback-{{ semester.semester }}').style.display = 'block';
-                return;
-            }
-            
-            const ctx = canvas.getContext('2d');
-            const chart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: {{ semester.grade_data.labels|safe }},
-                    datasets: [{
-                        data: {{ semester.grade_data.data|safe }},
-                        backgroundColor: [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-                            '#FF9F40', '#8AC24A', '#FF5722', '#607D8B', '#9C27B0'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: '#ffffff' } },
-                        title: { display: true, text: 'Grade Distribution', color: '#ffffff' }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error rendering chart for semester {{ semester.semester }}:', error);
-            document.getElementById('gradeFallback-{{ semester.semester }}').style.display = 'block';
-        }
-        {% endif %}
-        {% endfor %}
-    }
-
-    // Initialize charts
-    if (typeof Chart !== 'undefined') {
-        renderGradeCharts();
-    } else {
-        console.log('Chart.js not loaded, attempting fallback');
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-        script.onload = renderGradeCharts;
-        script.onerror = function() {
-            console.log('Failed to load Chart.js');
-            {% for semester in semester_data %}
-            document.getElementById('gradeFallback-{{ semester.semester }}').style.display = 'block';
-            {% endfor %}
-        };
-        document.head.appendChild(script);
-    }
-});
-</script>
-
 <style>
 /* Student details text */
 .card-body p {
-    color: #ffffff !important; /* White for student details text */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Stronger shadow for better contrast */
-}
-
-/* Table text */
-.table td, .table th {
-    color: #ffffff !important; /* White for table headers and data */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Stronger shadow */
-    background-color: rgba(0, 0, 0, 0.7) !important; /* Darker background for table cells */
-}
-
-.table .text-muted {
-    color: #8892b0 !important; /* Ensure "No results" text is visible */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 /* Headers */
-h2, h4, h5 {
-    color: #ffffff !important; /* White for all headers */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Stronger chalk-like shadow */
+h2 {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
-/* Card background for contrast */
+/* Card background */
 .card {
-    background-color: rgba(31, 26, 60, 0.9) !important; /* Dark green-black to match chalkboard theme */
+    background-color: rgba(31, 26, 60, 0.9) !important;
 }
 
-/* Grade fallback badges */
-.grade-chart-container {
-    position: relative;
-    margin: 0 auto;
-}
-
-.grade-fallback {
-    font-size: 0.8rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem;
-    justify-content: center;
-    color: #ffffff !important; /* White for fallback text */
-}
-
-.grade-fallback .badge {
-    color: #ffffff !important; /* White text for badges */
-    background-color: rgba(0, 0, 0, 0.5) !important; /* Dark background for contrast */
-}
-
-/* Select input styling */
-.input-group-text {
-    background-color: rgba(0, 0, 0, 0.1) !important; /* Semi-transparent background */
-    color: #ffffff !important; /* White icon */
-    border-color: #ffffff !important;
-}
-
-.form-select, .search-input {
-    background-color: rgba(255, 255, 255, 0.1) !important; /* Semi-transparent background */
-    color: #ffffff !important; /* White text */
-    border-color: #ffffff !important;
-}
-
-.form-select:focus, .search-input:focus {
-    background-color: rgba(255, 255, 255, 0.2) !important;
+/* Navigation pills */
+.nav-pills .nav-link {
     color: #ffffff !important;
-    border-color: #ffeb3b !important; /* Yellow border on focus */
-    box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
+    background-color: rgba(0, 0, 0, 0.3) !important;
 }
 
-.form-select option {
-    background-color:rgb(34, 26, 60) !important; /* Match card background */
-    color: #ffffff !important;
-}
-
-/* Ensure alert text is readable */
-.alert {
-    color: #000000 !important; /* Black text for alerts for contrast */
+.nav-pills .nav-link.active {
+    background-color: #ffeb3b !important;
+    color: #000000 !important;
 }
 
 /* Button styling */
-.btn-primary {
-    background-color: #007bff !important;
-    border-color: #007bff !important;
-}
-
 .btn-secondary {
     background-color: #6c757d !important;
     border-color: #6c757d !important;
+}
+
+/* Alert text */
+.alert {
+    color: #000000 !important;
 }
 </style>
 {% endblock %}

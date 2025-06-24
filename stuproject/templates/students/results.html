@@ -1,37 +1,22 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Student Details - {{ student }} - Student Management System{% endblock %}
+{% block title %}Results - {{ student }} - Student Management System{% endblock %}
 
 {% block content %}
-<div class="container mt-5" data-aos="fade-up">
-    <h2>Student Details - {{ student }}</h2>
+<div class="container mt-5 mb-5" data-aos="fade-up">
+    <h2>Results - {{ student }}</h2>
 
-    <!-- Student Details -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            {% if messages %}
-            <div class="alert-container">
-                {% for message in messages %}
-                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            <p><strong>First Name:</strong> {{ student.first_name }}</p>
-            <p><strong>Last Name:</strong> {{ student.last_name }}</p>
-            <p><strong>Roll Number:</strong> {{ student.roll_number }}</p>
-            <p><strong>Email:</strong> {{ student.email }}</p>
-            <p><strong>Department:</strong> {{ student_dept_course.department.name|default:"Not assigned" }}</p>
-            <p><strong>Course:</strong> {{ student_dept_course.course.name|default:"Not assigned" }}</p>
-            <p><strong>Is Active:</strong> {{ student.is_active|yesno:"Yes,No" }}</p>
-        </div>
-    </div>
+    <!-- Navigation Links -->
+    <nav class="nav nav-pills mb-4">
+        <a class="nav-link" href="{% url 'students:profile' %}">Profile</a>
+        <a class="nav-link active" href="{% url 'students:results' %}">Results</a>
+        <a class="nav-link" href="{% url 'students:fees' %}">Fees</a>
+        <a class="nav-link" href="{% url 'students:attendance' %}">Attendance</a>
+    </nav>
 
     <!-- Filters for Results -->
-    <div class="mb-4" data-aos="fade-right" data-aos-delay="200">
+    <div class="mb-4" data-aos="fade-right" data-aos-delay="100">
         <form method="GET" class="d-flex gap-3 flex-wrap">
             <div class="input-group" style="max-width: 300px;">
                 <span class="input-group-text"><i class="fas fa-filter"></i></span>
@@ -54,47 +39,16 @@
                 </select>
             </div>
             <button type="submit" class="btn btn-primary">Filter Results</button>
-            <a href="{% url 'students:student_detail' student.id %}" class="btn btn-secondary">Clear Results Filter</a>
+            <a href="{% url 'students:results' %}" class="btn btn-secondary">Clear Results Filter</a>
         </form>
-    </div>
-
-    <!-- Fees Details -->
-    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="300">
-        <div class="card-body">
-            <h4>Fee Details</h4>
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Amount</th>
-                            <th>Due Date</th>
-                            <th>Payment Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for fee in fees %}
-                        <tr>
-                            <td>{{ fee.amount }}</td>
-                            <td>{{ fee.due_date }}</td>
-                            <td>{{ fee.is_paid|yesno:"Paid,Unpaid" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-center text-muted">No fee records available.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
     <!-- Semester-wise Results and Grade Distribution -->
     {% for semester in semester_data %}
-    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:400 }}">
+    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:200 }}">
         <div class="card-body">
             <h4>Semester {{ semester.semester }}</h4>
-
+            
             <!-- Grade Distribution Chart -->
             <div class="mb-4">
                 <h5>Grade Distribution</h5>
@@ -145,69 +99,12 @@
         </div>
     </div>
     {% empty %}
-    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="500">
+    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="300">
         <div class="card-body">
             <p class="text-center text-muted">No results available for this student.</p>
         </div>
     </div>
     {% endfor %}
-
-    <!-- Attendance Details with Filter -->
-    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="600">
-        <div class="card-body">
-            <h4>Attendance Details</h4>
-            <!-- Attendance Filter -->
-            <div class="mb-3" data-aos="fade-right" data-aos-delay="650">
-                <form method="GET" class="d-flex gap-3 flex-wrap">
-                    <div class="input-group" style="max-width: 300px;">
-                        <span class="input-group-text"><i class="fas fa-filter"></i></span>
-                        <select name="attendance_subjects" multiple class="form-select search-input" style="height: 100px;">
-                            {% for subject in all_attendance_subjects %}
-                            <option value="{{ subject.id }}" {% if subject.id|stringformat:"s" in selected_attendance_subject_ids %}selected{% endif %}>
-                                {{ subject.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="input-group" style="max-width: 200px;">
-                        <span class="input-group-text">Start Date</span>
-                        <input type="date" name="attendance_start_date" class="form-control" value="{{ selected_attendance_start_date|default:'' }}">
-                    </div>
-                    <div class="input-group" style="max-width: 200px;">
-                        <span class="input-group-text">End Date</span>
-                        <input type="date" name="attendance_end_date" class="form-control" value="{{ selected_attendance_end_date|default:'' }}">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Filter Attendance</button>
-                    <a href="{% url 'students:student_detail' student.id %}" class="btn btn-secondary">Clear Attendance Filter</a>
-                </form>
-            </div>
-            <!-- Attendance Table -->
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Subject</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for attendance in attendances %}
-                        <tr>
-                            <td>{{ attendance.date }}</td>
-                            <td>{{ attendance.subject.name|default:"Not assigned" }}</td>
-                            <td>{{ attendance.status }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-center text-muted">No attendance records available.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 
     <!-- Pagination Controls -->
     {% if results.has_other_pages %}
@@ -250,19 +147,15 @@
     </nav>
     {% endif %}
 
-    <!-- Action Buttons -->
+    <!-- Back Button -->
     <div class="mt-4">
         <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Back to Student List</a>
-        {% if user.is_superuser %}
-        <a href="{% url 'students:edit_student' student.id %}" class="btn btn-primary ms-2"><i class="fas fa-edit"></i> Edit Student</a>
-        {% endif %}
     </div>
 </div>
 
 <!-- JavaScript for Grade Distribution Charts -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Function to render grade charts
     function renderGradeCharts() {
         {% for semester in semester_data %}
         {% if semester.grade_data.labels %}
@@ -304,7 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endfor %}
     }
 
-    // Initialize charts
     if (typeof Chart !== 'undefined') {
         renderGradeCharts();
     } else {
@@ -324,33 +216,27 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* Student details text */
-.card-body p {
-    color: #ffffff !important; /* White for student details text */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Stronger shadow for better contrast */
-}
-
 /* Table text */
 .table td, .table th {
-    color: #ffffff !important; /* White for table headers and data */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Stronger shadow */
-    background-color: rgba(0, 0, 0, 0.7) !important; /* Darker background for table cells */
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.7) !important;
 }
 
 .table .text-muted {
-    color: #8892b0 !important; /* Ensure "No results" text is visible */
+    color: #8892b0 !important;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* Headers */
 h2, h4, h5 {
-    color: #ffffff !important; /* White for all headers */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Stronger chalk-like shadow */
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
-/* Card background for contrast */
+/* Card background */
 .card {
-    background-color: rgba(31, 26, 60, 0.9) !important; /* Dark blue-black to match chalkboard theme */
+    background-color: rgba(31, 26, 60, 0.9) !important;
 }
 
 /* Grade fallback badges */
@@ -365,38 +251,33 @@ h2, h4, h5 {
     flex-wrap: wrap;
     gap: 0.2rem;
     justify-content: center;
-    color: #ffffff !important; /* White text for badges */
-    background-color: rgba(0, 0, 0, 0.5) !important; /* Dark background for contrast */
+    color: #ffffff !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Select input styling */
 .input-group-text {
-    background-color: rgba(0, 0, 0, 0.1) !important; /* Semi-transparent background */
-    color: #ffffff !important; /* White icon */
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    color: #ffffff !important;
     border-color: #ffffff !important;
 }
 
-.form-select, .search-input, .form-control {
-    background-color: rgba(255, 255, 255, 0.1) !important; /* Semi-transparent background */
-    color: #ffffff !important; /* White text */
+.form-select, .search-input {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
     border-color: #ffffff !important;
 }
 
-.form-select:focus, .search-input:focus, .form-control:focus {
+.form-select:focus, .search-input:focus {
     background-color: rgba(255, 255, 255, 0.2) !important;
     color: #ffffff !important;
-    border-color: #ffeb3b !important; /* Yellow border on focus */
+    border-color: #ffeb3b !important;
     box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
 }
 
 .form-select option {
-    background-color: rgb(34, 26, 60) !important; /* Match card background */
+    background-color: rgb(34, 26, 60) !important;
     color: #ffffff !important;
-}
-
-/* Ensure alert text is readable */
-.alert {
-    color: #000000 !important; /* Black text for alerts for contrast */
 }
 
 /* Button styling */
@@ -412,13 +293,13 @@ h2, h4, h5 {
 
 /* Pagination styling */
 .page-link {
-    color: #ffffff !important; /* White for pagination text */
+    color: #ffffff !important;
     background-color: rgba(0, 0, 0, 0.3) !important;
     border-color: #ffffff !important;
 }
 
 .page-item.active .page-link {
-    background-color: #ffeb3b !important; /* Yellow for active page */
+    background-color: #ffeb3b !important;
     color: #000000 !important;
     border-color: #ffeb3b !important;
 }

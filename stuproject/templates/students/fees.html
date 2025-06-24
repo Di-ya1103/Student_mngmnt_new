@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fees - {{ student }} - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5" data-aos="fade-up">
+    <h2>Fees - {{ student }}</h2>
+
+    <!-- Navigation Links -->
+    <nav class="nav nav-pills mb-4">
+        <a class="nav-link" href="{% url 'students:profile' %}">Profile</a>
+        <a class="nav-link" href="{% url 'students:results' %}">Results</a>
+        <a class="nav-link active" href="{% url 'students:fees' %}">Fees</a>
+        <a class="nav-link" href="{% url 'students:attendance' %}">Attendance</a>
+    </nav>
+
+    <!-- Fees Details -->
+    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body">
+            <h4>Fee Details</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Amount</th>
+                            <th>Due Date</th>
+                            <th>Payment Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee in fees %}
+                        <tr>
+                            <td>{{ fee.amount }}</td>
+                            <td>{{ fee.due_date }}</td>
+                            <td>{{ fee.is_paid|yesno:"Paid,Unpaid" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No fee records available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-4">
+        <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Back to Student List</a>
+    </div>
+</div>
+
+<style>
+/* Table text */
+.table td, .table th {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.table .text-muted {
+    color: #8892b0 !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Headers */
+h2, h4 {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Card background */
+.card {
+    background-color: rgba(31, 26, 60, 0.9) !important;
+}
+
+/* Button styling */
+.btn-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+/* Navigation pills */
+.nav-pills .nav-link {
+    color: #ffffff !important;
+    background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #ffeb3b !important;
+    color: #000000 !important;
+}
+</style>
+{% endblock %}

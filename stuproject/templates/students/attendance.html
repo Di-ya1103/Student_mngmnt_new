@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Attendance - {{ student }} - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5" data-aos="fade-up">
+    <h2>Attendance - {{ student }}</h2>
+
+    <!-- Navigation Links -->
+    <nav class="nav nav-pills mb-4">
+        <a class="nav-link" href="{% url 'students:profile' %}">Profile</a>
+        <a class="nav-link" href="{% url 'students:results' %}">Results</a>
+        <a class="nav-link" href="{% url 'students:fees' %}">Fees</a>
+        <a class="nav-link active" href="{% url 'students:attendance' %}">Attendance</a>
+    </nav>
+
+    <!-- Attendance Details with Filter -->
+    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="card-body">
+            <h4>Attendance Details</h4>
+            <!-- Attendance Filter -->
+            <div class="mb-3" data-aos="fade-right" data-aos-delay="150">
+                <form method="GET" class="d-flex gap-3 flex-wrap">
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                        <select name="attendance_subjects" multiple class="form-select search-input" style="height: 100px;">
+                            {% for subject in all_attendance_subjects %}
+                            <option value="{{ subject.id }}" {% if subject.id|stringformat:"s" in selected_attendance_subject_ids %}selected{% endif %}>
+                                {{ subject.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="input-group" style="max-width: 200px;">
+                        <span class="input-group-text">Start Date</span>
+                        <input type="date" name="attendance_start_date" class="form-control" value="{{ selected_attendance_start_date|default:'' }}">
+                    </div>
+                    <div class="input-group" style="max-width: 200px;">
+                        <span class="input-group-text">End Date</span>
+                        <input type="date" name="attendance_end_date" class="form-control" value="{{ selected_attendance_end_date|default:'' }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Filter Attendance</button>
+                    <a href="{% url 'students:attendance' %}" class="btn btn-secondary">Clear Attendance Filter</a>
+                </form>
+            </div>
+            <!-- Attendance Table -->
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in attendances %}
+                        <tr>
+                            <td>{{ attendance.date }}</td>
+                            <td>{{ attendance.subject.name|default:"Not assigned" }}</td>
+                            <td>{{ attendance.status }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No attendance records available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-4">
+        <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Back to Student List</a>
+    </div>
+</div>
+
+<style>
+/* Table text */
+.table td, .table th {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.table .text-muted {
+    color: #8892b0 !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Headers */
+h2, h4 {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Card background */
+.card {
+    background-color: rgba(31, 26, 60, 0.9) !important;
+}
+
+/* Select input styling */
+.input-group-text {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+}
+
+.form-select, .form-control {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+}
+
+.form-select:focus, .form-control:focus {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-color: #ffeb3b !important;
+    box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
+}
+
+.form-select option {
+    background-color: rgb(34, 26, 60) !important;
+    color: #ffffff !important;
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+.btn-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+/* Navigation pills */
+.nav-pills .nav-link {
+    color: #ffffff !important;
+    background-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #ffeb3b !important;
+    color: #000000 !important;
+}
+</style>
+{% endblock %}
