@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Subject List - Student Management System{% endblock %}
+{% block title %}Enrollment List - Student Management System{% endblock %}
 
 {% block content %}
 <div class="container mt-5 mb-5">
@@ -24,74 +24,67 @@
             <form method="GET" class="d-flex gap-3">
                 <div class="input-group">
                     <span class="input-group-text bg-dark-blue text-white"><i class="fas fa-search"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="Search by name or code" value="{{ search_query }}">
+                    <input type="text" name="search" class="form-control" placeholder="Search by name or roll number" value="{{ search_query }}">
                 </div>
-                <select name="semester" class="form-select" style="width: auto;">
-                    <option value="">All Semesters</option>
-                    {% for semester in semesters %}
-                    <option value="{{ semester }}" {% if request.GET.semester == semester|stringformat:"s" %}selected{% endif %}>
-                        Semester {{ semester }}
+                <select name="course" class="form-select" style="width: auto;">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if request.GET.course == course.id|stringformat:"s" %}selected{% endif %}>
+                        {{ course.name }}
                     </option>
                     {% endfor %}
                 </select>
                 <button type="submit" class="btn btn-warning text-dark">
                     <i class="fas fa-filter"></i> Filter
                 </button>
-                {% if subjects.has_other_pages %}
-                <input type="hidden" name="page" value="{{ subjects.number }}">
+                {% if enrollments.has_other_pages %}
+                <input type="hidden" name="page" value="{{ enrollments.number }}">
                 {% endif %}
             </form>
         </div>
     </div>
 
-    <!-- Subjects Table -->
+    <!-- Enrollment Table -->
     <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
-        <h2 class="mb-4 text-white"><i class="fas fa-book me-2"></i>Subjects</h2>
+        <h2 class="mb-4 text-white"><i class="fas fa-list me-2"></i>Enrollment List</h2>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr style="background-color: #0a192f; color: #1e90ff;">
-                        <th class="col-min-width">Name</th>
-                        <th class="col-min-width">Code</th>
-                        <th class="col-min-width">Semester</th>
-                        <th class="col-actions-width">Actions</th>
+                        <th class="col-min-width">Student</th>
+                        <th class="col-min-width">Roll Number</th>
+                        <th class="col-min-width">Course</th>
+                        <th class="col-min-width">Department</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for subject in subjects %}
+                    {% for enrollment in enrollments %}
                     <tr style="background-color: #1c2526; color: #e6e6e6;">
-                        <td>{{ subject.name }}</td>
-                        <td>{{ subject.code }}</td>
-                        <td>Semester {{ subject.semester }}</td>
-                        <td>
-                            <a href="{% url 'students:edit_subject' subject.id %}" class="btn btn-sm btn-warning text-dark" title="Edit">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                            <a href="{% url 'students:delete_subject' subject.id %}" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this subject?');">
-                                <i class="fas fa-trash-alt"></i> Delete
-                            </a>
-                        </td>
+                        <td>{{ enrollment.student.first_name }} {{ enrollment.student.last_name }}</td>
+                        <td>{{ enrollment.student.roll_number }}</td>
+                        <td>{{ enrollment.course.name }}</td>
+                        <td>{{ enrollment.course.department.name }}</td>
                     </tr>
                     {% empty %}
                     <tr style="background-color: #1c2526; color: #e6e6e6;">
-                        <td colspan="4" class="text-center text-muted">No subjects found.</td>
+                        <td colspan="4" class="text-center text-muted">No enrollments found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <a href="{% url 'students:add_subject' %}" class="btn btn-warning text-dark mt-3">
-            <i class="fas fa-plus"></i> Add Subject
+        <a href="{% url 'students:enrollment_add' %}" class="btn btn-warning text-dark mt-3">
+            <i class="fas fa-plus"></i> Add Enrollment
         </a>
     </div>
 
     <!-- Pagination -->
-    {% if subjects.has_other_pages %}
+    {% if enrollments.has_other_pages %}
     <nav aria-label="Page navigation" class="mt-4">
         <ul class="pagination justify-content-center">
-            {% if subjects.has_previous %}
+            {% if enrollments.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ subjects.previous_page_number }}{% if request.GET.semester %}&semester={{ request.GET.semester }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
+                <a class="page-link" href="?page={{ enrollments.previous_page_number }}{% if request.GET.course %}&course={{ request.GET.course }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
                     <span aria-hidden="true">«</span>
                 </a>
             </li>
@@ -102,14 +95,14 @@
                 </a>
             </li>
             {% endif %}
-            {% for num in subjects.paginator.page_range %}
-            <li class="page-item {% if subjects.number == num %}active{% endif %}">
-                <a class="page-link" href="?page={{ num }}{% if request.GET.semester %}&semester={{ request.GET.semester }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">{{ num }}</a>
+            {% for num in enrollments.paginator.page_range %}
+            <li class="page-item {% if enrollments.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.course %}&course={{ request.GET.course }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">{{ num }}</a>
             </li>
             {% endfor %}
-            {% if subjects.has_next %}
+            {% if enrollments.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ subjects.next_page_number }}{% if request.GET.semester %}&semester={{ request.GET.semester }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
+                <a class="page-link" href="?page={{ enrollments.next_page_number }}{% if request.GET.course %}&course={{ request.GET.course }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
                     <span aria-hidden="true">»</span>
                 </a>
             </li>
@@ -150,9 +143,6 @@
 .table th.col-min-width, .table td {
     min-width: 120px;
 }
-.table th.col-actions-width, .table td:nth-child(4) {
-    min-width: 140px;
-}
 .form-control, .form-select {
     background-color: #1c2526 !important;
     color: #e6e6e6 !important;
@@ -172,13 +162,6 @@
 }
 .btn-warning:hover {
     background-color: #e6c200 !important;
-}
-.btn-danger {
-    background-color: #dc3545 !important;
-    border: none;
-}
-.btn-danger:hover {
-    background-color: #c82333 !important;
 }
 .card.bg-dark-blue {
     background-color: #0a192f !important;

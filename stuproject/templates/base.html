@@ -43,38 +43,46 @@
         }
 
         body {
-            background: var(--dark-blue); /* Solid dark blue background */
+            background: var(--dark-blue);
             color: var(--chalk-text);
             font-family: 'Schoolbell', cursive;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             position: relative;
-            /* Removed overflow: hidden to allow scrolling */
+            overflow-x: hidden;
         }
 
         #particle-container {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             top: 0;
             left: 0;
             pointer-events: none;
             z-index: -1;
+            overflow: hidden;
         }
 
         .bond-particle {
             position: absolute;
-            background: var(--chalk-text); /* White particles */
+            background: var(--chalk-text);
             border-radius: 50%;
             animation: bondFloat 20s linear infinite;
+            --x-offset: clamp(-50vw, (Math.random() - 0.5) * 50vw, 50vw);
+            --y-offset: clamp(-50vh, (Math.random() - 0.5) * 50vh, 50vh);
         }
 
         .bond-line {
             position: absolute;
-            background: rgba(230, 230, 230, 0.5); /* Semi-transparent white line for bond */
+            background: rgba(230, 230, 230, 0.5);
             transform-origin: center;
             animation: bondRotate 10s linear infinite;
+            max-width: 30px;
+            height: 1px;
+            left: 50%;
+            top: 50%;
+            transform: translateX(-50%);
         }
 
         @keyframes bondFloat {
@@ -87,11 +95,11 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Improved Navbar */
         .navbar {
             background: rgba(0, 0, 0, 0.8);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
             transition: all 0.4s cubic-bezier(0.645, 0.045, 0.355, 1);
+            padding: 0.5rem 1rem;
         }
 
         .navbar-brand {
@@ -101,6 +109,7 @@
             position: relative;
             color: var(--chalk-text) !important;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-size: 1.1rem; /* Slightly reduced for space */
         }
 
         .navbar-brand::after {
@@ -121,10 +130,14 @@
         .nav-link {
             font-family: 'Schoolbell', cursive;
             position: relative;
-            margin: 0 10px;
+            margin: 0 6px; /* Further reduced margin */
             color: var(--chalk-text) !important;
             transition: all 0.3s ease;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            font-size: 0.85rem; /* Slightly smaller text */
+            display: flex;
+            align-items: center;
+            white-space: nowrap; /* Prevent text wrapping */
         }
 
         .nav-link:hover {
@@ -146,7 +159,11 @@
             width: 100%;
         }
 
-        /* Fix for navbar toggler icon (3 lines visibility) */
+        .nav-link i {
+            margin-right: 3px; /* Reduced spacing */
+            font-size: 0.85em; /* Smaller icons */
+        }
+
         .navbar-toggler-icon {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(230, 230, 230, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
         }
@@ -159,14 +176,13 @@
             box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.3) !important;
         }
 
-        /* Style for the logout button to match nav-link */
         .logout-btn {
             background: none;
             border: none;
             padding: 0;
-            margin: 0 10px;
+            margin: 0 6px; /* Further reduced margin */
             color: var(--chalk-text);
-            font-size: 1rem;
+            font-size: 0.85rem; /* Smaller text */
             font-family: 'Schoolbell', cursive;
             position: relative;
             display: flex;
@@ -195,14 +211,17 @@
         }
 
         .logout-btn i {
-            margin-right: 5px;
+            margin-right: 3px; /* Reduced spacing */
+            font-size: 0.85em; /* Smaller icons */
         }
 
-        /* Main Content Animation */
         main {
             flex: 1;
             opacity: 0;
             animation: fadeIn 0.8s ease-out forwards;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         @keyframes fadeIn {
@@ -210,7 +229,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Cards */
         .card {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -218,6 +236,8 @@
             transition: all 0.4s cubic-bezier(0.645, 0.045, 0.355, 1);
             transform: translateY(0);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 100%;
         }
 
         .card h2 {
@@ -232,7 +252,6 @@
             border-color: rgba(255, 235, 59, 0.3);
         }
 
-        /* Buttons */
         .btn-primary {
             background: transparent;
             border: 1px solid var(--chalk-accent);
@@ -264,11 +283,13 @@
             left: 0;
         }
 
-        /* Tables */
         .table {
             color: var(--chalk-text);
             border-color: rgba(255, 255, 255, 0.2);
             background: rgba(0, 0, 0, 0.3);
+            width: 100%;
+            table-layout: auto;
+            overflow-x: auto;
         }
 
         .table th {
@@ -278,13 +299,14 @@
             font-weight: 500;
             letter-spacing: 0.5px;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
         }
 
         .table td {
             color: var(--chalk-text);
+            white-space: nowrap;
         }
 
-        /* Remove all table animations and effects */
         .table tbody tr {
             transition: none;
         }
@@ -293,7 +315,6 @@
             background: none;
         }
 
-        /* Remove table borders for a cleaner chalkboard look */
         .table, .table th, .table td {
             border: none !important;
         }
@@ -302,7 +323,6 @@
             border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
         }
 
-        /* Footer */
         footer {
             background: rgba(0, 0, 0, 0.8) !important;
             color: var(--chalk-text);
@@ -310,6 +330,7 @@
             position: relative;
             font-family: 'Schoolbell', cursive;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            width: 100%;
         }
 
         footer::before {
@@ -322,13 +343,12 @@
             background: linear-gradient(90deg, transparent, var(--chalk-accent), transparent);
         }
 
-        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--dark-blue); /* Match background */
+            background: var(--dark-blue);
         }
 
         ::-webkit-scrollbar-thumb {
@@ -340,13 +360,13 @@
             background: var(--chalk-text);
         }
 
-        /* Form Elements */
         .form-control, .form-select {
             background: rgba(255, 255, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: var(--chalk-text);
             font-family: 'Schoolbell', cursive;
             transition: all 0.3s ease;
+            max-width: 100%;
         }
 
         .form-control:focus, .form-select:focus {
@@ -356,7 +376,6 @@
             color: var(--chalk-text);
         }
 
-        /* Animations */
         .animate-float {
             animation: float 3s ease-in-out infinite;
         }
@@ -383,46 +402,58 @@
 
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg">
-        <div class="container">
+        <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'students:student_list' %}">
                 <i class="fas fa-graduation-cap me-2"></i>
-                Student Management System
+                Student Managament System
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto flex-row flex-wrap"> <!-- Added flex-wrap -->
                     {% if user.is_authenticated %}
                         {% if user.is_superuser %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'students:student_list' %}">
                                 <i class="fas fa-users"></i>
-                                Students
+                                Stud
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'students:results_list' %}">
                                 <i class="fas fa-chart-bar"></i>
-                                Results
+                                Res
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'students:subjects_list' %}">
                                 <i class="fas fa-book"></i>
-                                Subjects
+                                Subj
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'students:departments_list' %}">
                                 <i class="fas fa-building"></i>
-                                Departments
+                                Dept
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'students:courses_list' %}">
                                 <i class="fas fa-bookmark"></i>
-                                Courses
+                                Crs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:lectures_list' %}">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                Lec
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'students:enrollment_list' %}">
+                                <i class="fas fa-user-plus"></i>
+                                Enr
                             </a>
                         </li>
                         <li class="nav-item">
@@ -434,7 +465,7 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'students:attendance_list' %}">
                                 <i class="fas fa-clipboard-list"></i>
-                                Attendance
+                                Att
                             </a>
                         </li>
                         <li class="nav-item">
@@ -447,24 +478,24 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'students:profile' %}">
                                 <i class="fas fa-user"></i>
-                                Profile
+                                Prof
                             </a>
                         </li>
                         {% endif %}
-                       <li class="nav-item">
-    <form action="{% url 'auth:logout' %}" method="POST" class="d-inline">
-        {% csrf_token %}
-        <button type="submit" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i>
-            Logout
-        </button>
-    </form>
-</li>
+                        <li class="nav-item">
+                            <form action="{% url 'auth:logout' %}" method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="logout-btn">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Out
+                                </button>
+                            </form>
+                        </li>
                     {% else %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'auth:login' %}">
                                 <i class="fas fa-sign-in-alt"></i>
-                                Login
+                                Log
                             </a>
                         </li>
                     {% endif %}
@@ -508,10 +539,8 @@
     
     <!-- Custom JS -->
     <script>
-        // Set current year in footer
         document.querySelector('.current-year').textContent = new Date().getFullYear();
         
-        // Remove scroll-based animations for table
         const animateOnScroll = () => {
             const elements = document.querySelectorAll('.animate-on-scroll:not(.table)');
             elements.forEach(el => {
@@ -527,23 +556,18 @@
         window.addEventListener('load', animateOnScroll);
         window.addEventListener('scroll', animateOnScroll);
 
-        // Create bond-like floating particles
         function createBondParticles() {
             const particleContainer = document.getElementById('particle-container');
-            const bondCount = 20; // Number of bond pairs
+            const bondCount = 20;
 
             for (let i = 0; i < bondCount; i++) {
-                // Create bond pair container
                 const bond = document.createElement('div');
                 bond.style.position = 'absolute';
-
-                // Random center position
-                const centerX = Math.random() * 100;
-                const centerY = Math.random() * 100;
+                const centerX = Math.random() * 90;
+                const centerY = Math.random() * 90;
                 bond.style.left = `${centerX}vw`;
                 bond.style.top = `${centerY}vh`;
 
-                // First particle
                 const particle1 = document.createElement('div');
                 particle1.className = 'bond-particle';
                 const size1 = Math.random() * 10 + 5;
@@ -552,43 +576,35 @@
                 particle1.style.left = `-${size1 / 2}px`;
                 particle1.style.top = `-${size1 / 2}px`;
 
-                // Second particle
                 const particle2 = document.createElement('div');
                 particle2.className = 'bond-particle';
                 const size2 = Math.random() * 10 + 5;
                 particle2.style.width = `${size2}px`;
                 particle2.style.height = `${size2}px`;
-                particle2.style.left = `${size1 / 2 + 20}px`; // Fixed distance for bond
+                particle2.style.left = `${size1 / 2 + 15}px`;
                 particle2.style.top = `-${size2 / 2}px`;
 
-                // Bond line
                 const line = document.createElement('div');
                 line.className = 'bond-line';
-                const lineLength = 20 + Math.random() * 10; // Random bond length
-                line.style.width = `${lineLength}px`;
+                line.style.width = `${15 + Math.random() * 10}px`;
                 line.style.height = '1px';
                 line.style.left = `${size1 / 2}px`;
                 line.style.top = '50%';
 
-                // Add particles and line to bond container
                 bond.appendChild(particle1);
                 bond.appendChild(particle2);
                 bond.appendChild(line);
 
-                // Random movement offsets
-                const xOffset = (Math.random() - 0.5) * 50; // -25vw to +25vw
-                const yOffset = (Math.random() - 0.5) * 50; // -25vh to +25vh
+                const xOffset = (Math.random() - 0.5) * 40;
+                const yOffset = (Math.random() - 0.5) * 40;
                 bond.style.setProperty('--x-offset', `${xOffset}vw`);
                 bond.style.setProperty('--y-offset', `${yOffset}vh`);
-
-                // Random animation delay
                 bond.style.animationDelay = `${Math.random() * 10}s`;
 
                 particleContainer.appendChild(bond);
             }
         }
 
-        // Initialize particles on load
         window.addEventListener('load', createBondParticles);
     </script>
 </body>

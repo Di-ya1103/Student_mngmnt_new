@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Delete Attendance{% endblock %}
+{% block title %}Delete Lecture{% endblock %}
 {% block content %}
 <div class="row animate__animated animate__fadeIn">
     <div class="col-md-6 offset-md-3">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h2 class="card-title mb-4">
-                    <i class="fas fa-trash me-2"></i>Delete Attendance
+                    <i class="fas fa-trash me-2"></i>Delete Lecture
                 </h2>
                 <!-- Messages -->
                 {% if messages %}
@@ -17,14 +17,14 @@
                         </div>
                     {% endfor %}
                 {% endif %}
-                <p>Are you sure you want to delete the attendance record for <strong>{{ attendance.student.first_name }} {{ attendance.student.last_name }}</strong> on <strong>{{ attendance.date|date:'Y-m-d' }}</strong> for <strong>{{ attendance.subject.name }}</strong>?</p>
+                <p>Are you sure you want to delete the lecture for <strong>{{ lecture.course.name }}{% if lecture.subject %} ({{ lecture.subject.name }}){% endif %}</strong> on <strong>{{ lecture.date|date:'Y-m-d' }}</strong>?</p>
                 <form method="POST">
                     {% csrf_token %}
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-danger">
                             <i class="fas fa-trash"></i> Delete
                         </button>
-                        <a href="{% url 'students:attendance_list' %}" class="btn btn-secondary">
+                        <a href="{% url 'students:lectures_list' %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Cancel
                         </a>
                     </div>

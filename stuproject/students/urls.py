@@ -61,4 +61,16 @@ urlpatterns = [
     path('accounts/reset/done/', auth_views.PasswordResetCompleteView.as_view(
         template_name='registration/password_reset_complete.html'
     ), name='password_reset_complete'),
+    path('api/students/', views.get_students_by_course, name='get_students_by_course'),
+    path('api/students-not-enrolled/', views.get_students_not_enrolled, name='get_students_not_enrolled'),
+    path('enrollment/add/', views.enrollment_add, name='enrollment_add'),
+    path('enrollment/', views.enrollment_list, name='enrollment_list'),
+    path('lectures/', views.lectures_list, name='lectures_list'),
+    path('lectures/add/', views.add_lecture, name='add_lecture'),
+    path('lectures/edit/<int:lecture_id>/', views.edit_lecture, name='edit_lecture'),
+    path('lectures/delete/<int:lecture_id>/', views.delete_lecture, name='delete_lecture'),
+    path('api/lectures/', views.get_lectures, name='get_lectures'),
+    path('api/lecture-students/<int:lecture_id>/', views.get_lecture_students, name='get_lecture_students'),
+  
+    
 ]

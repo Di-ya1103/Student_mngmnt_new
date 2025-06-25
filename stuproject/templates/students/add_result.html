@@ -1,93 +1,97 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Add Result for {{ student }} - Student Management System{% endblock %}
 
 {% block content %}
-<div class="container mt-5" data-aos="fade-up">
-    <h2>Add Result for {{ student }}</h2>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            {% if messages %}
-            <div class="alert-container">
-                {% for message in messages %}
-                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            <form method="POST" action="{% url 'students:add_result' student.id %}">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="subject" class="form-label">Subject</label>
-                    <select class="form-select" id="subject" name="subject" required>
-                        {% for subject in subjects %}
-                        <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="score" class="form-label">Score</label>
-                    <input type="number" class="form-control" id="score" name="score" step="0.01" min="0" max="100" required>
-                </div>
-                <div class="mb-3">
-                    <label for="semester" class="form-label">Semester</label>
-                    <input type="text" class="form-control" id="semester" name="semester" required>
-                </div>
-                <div class="mb-3">
-                    <label for="year" class="form-label">Year</label>
-                    <input type="number" class="form-control" id="year" name="year" required>
-                </div>
-                <div class="mb-3">
-                    <label for="remarks" class="form-label">Remarks</label>
-                    <textarea class="form-control" id="remarks" name="remarks"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Add Result</button>
-                <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Cancel</a>
-            </form>
+<div class="container mt-5 mb-5">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Add Result Form -->
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white"><i class="fas fa-clipboard-list me-2"></i>Add Result for {{ student }}</h2>
+        <form method="POST" action="{% url 'students:add_result' student.id %}" class="d-flex flex-column gap-3">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="subject" class="form-label text-white">Subject</label>
+                <select class="form-select" id="subject" name="subject" required>
+                    <option value="">Select Subject</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code })</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="score" class="form-label text-white">Score</label>
+                <input type="number" class="form-control" id="score" name="score" step="0.01" min="0" max="100" required>
+            </div>
+            <div class="mb-3">
+                <label for="semester" class="form-label text-white">Semester</label>
+                <input type="text" class="form-control" id="semester" name="semester" required>
+            </div>
+            <div class="mb-3">
+                <label for="year" class="form-label text-white">Year</label>
+                <input type="number" class="form-control" id="year" name="year" required>
+            </div>
+            <div class="mb-3">
+                <label for="remarks" class="form-label text-white">Remarks</label>
+                <textarea class="form-control" id="remarks" name="remarks"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning text-dark">
+                    <i class="fas fa-save"></i> Add Result
+                </button>
+                <a href="{% url 'students:student_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 
 <style>
-    /* Ensure form labels are highly visible */
-    .form-label {
-        color: #ffffff !important; /* Bright white for maximum contrast */
-        font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7); /* Add shadow for readability */
-    }
-
-    /* Enhance form control text visibility */
-    .form-control, .form-select {
-        background-color: rgba(255, 255, 255, 0.1) !important; /* Slightly lighter background */
-        color: #ffffff !important; /* White text */
-        border: 1px solid #ffffff !important; /* White border for contrast */
-        text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5); /* Subtle shadow */
-    }
-
-    /* Placeholder text color */
-    .form-control::placeholder, .form-select::placeholder {
-        color: #cccccc !important; /* Light gray placeholder */
-    }
-
-    /* Focus state for better feedback */
-    .form-control:focus, .form-select:focus {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        border-color: #ffeb3b !important; /* Yellow border on focus */
-        box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
-        color: #ffffff !important;
-    }
-
-    /* Option text in select dropdown */
-    .form-select option {
-        background-color: #1a3c34 !important; /* Match card background */
-        color: #ffffff !important;
-    }
-
-    /* Card body background to match theme */
-    .card-body {
-        background-color: rgba(26, 60, 52, 0.9) !important; /* Slightly transparent dark green */
-    }
+/* Form styles */
+.form-control, .form-select {
+    background-color: #1c2526 !important;
+    color: #e6e6e6 !important;
+    border: 1px solid #1e90ff !important;
+}
+.form-control::placeholder, .form-select::placeholder {
+    color: #8892b0 !important;
+}
+.form-select option {
+    background-color: #0a192f !important;
+    color: #e6e6e6 !important;
+}
+.btn-warning {
+    background-color: #ffd700 !important;
+    color: #000000 !important;
+    border: none;
+}
+.btn-warning:hover {
+    background-color: #e6c200 !important;
+}
+.btn-secondary {
+    background-color: #6c757d !important;
+    border: none;
+}
+.btn-secondary:hover {
+    background-color: #5a6268 !important;
+}
+.card.bg-dark-blue {
+    background-color: #0a192f !important;
+    border: 1px solid #1e90ff;
+}
 </style>
 {% endblock %}

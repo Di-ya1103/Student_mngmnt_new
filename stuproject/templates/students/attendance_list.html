@@ -18,54 +18,44 @@
     </div>
     {% endif %}
 
-    <!-- Filters -->
-    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
-        <h2 class="mb-4 text-white">Attendance Records</h2>
-        <form method="GET" class="d-flex gap-3">
-            <div class="input-group">
-                <span class="input-group-text bg-dark-blue text-white"><i class="fas fa-search"></i></span>
-                <input type="text" class="form-control" name="search" placeholder="Search by student name" value="{{ search_query|default:'' }}" style="background-color: #1c2526; color: #e6e6e6; border: 1px solid #1e90ff;">
-            </div>
-            <select name="department" class="form-select" style="width: auto; background-color: #1c2526; color: #e6e6e6; border: 1px solid #1e90ff;">
-                <option value="">All Departments</option>
-                {% for dept in departments %}
-                    <option value="{{ dept.id }}" {% if selected_department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
-                {% endfor %}
-            </select>
-            <select name="course" class="form-select" style="width: auto; background-color: #1c2526; color: #e6e6e6; border: 1px solid #1e90ff;">
-                <option value="">All Courses</option>
-                {% for course in courses %}
-                    <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.name }}</option>
-                {% endfor %}
-            </select>
-            <select name="subject" class="form-select" style="width: auto; background-color: #1c2526; color: #e6e6e6; border: 1px solid #1e90ff;">
-                <option value="">All Subjects</option>
-                <option value="none" {% if selected_subject == "none" %}selected{% endif %}>No Subject</option>
-                {% for subject in subjects %}
-                    <option value="{{ subject.id }}" {% if selected_subject == subject.id|stringformat:"s" %}selected{% endif %}>{{ subject.name }}</option>
-                {% endfor %}
-            </select>
-            <input type="date" class="form-control" name="date" value="{{ selected_date|default:''|date:'Y-m-d' }}" style="width: auto; background-color: #1c2526; color: #e6e6e6; border: 1px solid #1e90ff;">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
-            <a href="{% url 'students:attendance_add' %}" class="btn btn-success"><i class="fas fa-plus"></i> Mark Attendance</a>
-            {% if attendances.has_other_pages %}
-            <input type="hidden" name="page" value="{{ attendances.number }}">
-            {% endif %}
-        </form>
+    <!-- Filter Form -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form method="GET" class="d-flex gap-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-dark-blue text-white"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search by name or roll number" value="{{ search_query }}">
+                </div>
+                <select name="lecture" class="form-select" style="width: auto;">
+                    <option value="">All Lectures</option>
+                    {% for lecture in lectures %}
+                    <option value="{{ lecture.id }}" {% if request.GET.lecture == lecture.id|stringformat:"s" %}selected{% endif %}>
+                        {{ lecture.course.name }} - {{ lecture.date|date:"Y-m-d" }}{% if lecture.subject %} ({{ lecture.subject.name }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-warning text-dark">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                {% if attendances.has_other_pages %}
+                <input type="hidden" name="page" value="{{ attendances.number }}">
+                {% endif %}
+            </form>
+        </div>
     </div>
 
     <!-- Attendance Table -->
-    <div class="card p-4 bg-dark-blue mt-4" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white"><i class="fas fa-clipboard-list me-2"></i>Attendance Records</h2>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr style="background-color: #0a192f; color: #1e90ff;">
-                        <th class="col-min-width">Student Name</th>
+                        <th class="col-min-width">Student</th>
                         <th class="col-min-width">Roll Number</th>
-                        <th class="col-min-width">Department</th>
                         <th class="col-min-width">Course</th>
                         <th class="col-min-width">Subject</th>
-                        <th class="col-min-width">Date</th>
+                        <th class="col-min-width">Lecture Date</th>
                         <th class="col-min-width">Status</th>
                         <th class="col-actions-width">Actions</th>
                     </tr>
@@ -75,23 +65,14 @@
                     <tr style="background-color: #1c2526; color: #e6e6e6;">
                         <td>{{ attendance.student.first_name }} {{ attendance.student.last_name }}</td>
                         <td>{{ attendance.student.roll_number }}</td>
+                        <td>{{ attendance.lecture.course.name }}</td>
+                        <td>{{ attendance.lecture.subject.name|default:"N/A" }}</td>
+                        <td>{{ attendance.lecture.date|date:"Y-m-d" }}</td>
                         <td>
-                            {% for sdc in student_dept_courses %}
-                            {% if sdc.student.id == attendance.student.id %}
-                            {{ sdc.department.name|default:"Not assigned" }}
-                            {% endif %}
-                            {% endfor %}
+                            <span class="badge {% if attendance.status == 'Present' %}bg-success{% elif attendance.status == 'Absent' %}bg-danger{% else %}bg-warning{% endif %}">
+                                {{ attendance.status }}
+                            </span>
                         </td>
-                        <td>
-                            {% for sdc in student_dept_courses %}
-                            {% if sdc.student.id == attendance.student.id %}
-                            {{ sdc.course.name|default:"Not assigned" }}
-                            {% endif %}
-                            {% endfor %}
-                        </td>
-                        <td>{{ attendance.subject.name|default:"No Subject" }}</td>
-                        <td>{{ attendance.date|date:"Y-m-d" }}</td>
-                        <td>{{ attendance.status }}</td>
                         <td>
                             <a href="{% url 'students:attendance_edit' attendance.id %}" class="btn btn-sm btn-warning text-dark" title="Edit">
                                 <i class="fas fa-edit"></i> Edit
@@ -103,21 +84,24 @@
                     </tr>
                     {% empty %}
                     <tr style="background-color: #1c2526; color: #e6e6e6;">
-                        <td colspan="8" class="text-center text-muted">No attendance records found.</td>
+                        <td colspan="7" class="text-center text-muted">No attendance records found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        <a href="{% url 'students:attendance_add' %}" class="btn btn-warning text-dark mt-3">
+            <i class="fas fa-plus"></i> Add Attendance
+        </a>
     </div>
 
-    <!-- Pagination Controls -->
+    <!-- Pagination -->
     {% if attendances.has_other_pages %}
     <nav aria-label="Page navigation" class="mt-4">
         <ul class="pagination justify-content-center">
             {% if attendances.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="{% url 'students:attendance_list' %}?page={{ attendances.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_course %}&course={{ selected_course }}{% endif %}{% if selected_subject %}&subject={{ selected_subject }}{% endif %}{% if selected_date %}&date={{ selected_date|date:'Y-m-d' }}{% endif %}" aria-label="Previous" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
+                <a class="page-link" href="?page={{ attendances.previous_page_number }}{% if request.GET.lecture %}&lecture={{ request.GET.lecture }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
                     <span aria-hidden="true">«</span>
                 </a>
             </li>
@@ -128,16 +112,14 @@
                 </a>
             </li>
             {% endif %}
-
             {% for num in attendances.paginator.page_range %}
             <li class="page-item {% if attendances.number == num %}active{% endif %}">
-                <a class="page-link" href="{% url 'students:attendance_list' %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_course %}&course={{ selected_course }}{% endif %}{% if selected_subject %}&subject={{ selected_subject }}{% endif %}{% if selected_date %}&date={{ selected_date|date:'Y-m-d' }}{% endif %}" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">{{ num }}</a>
+                <a class="page-link" href="?page={{ num }}{% if request.GET.lecture %}&lecture={{ request.GET.lecture }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">{{ num }}</a>
             </li>
             {% endfor %}
-
             {% if attendances.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{% url 'students:attendance_list' %}?page={{ attendances.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_course %}&course={{ selected_course }}{% endif %}{% if selected_subject %}&subject={{ selected_subject }}{% endif %}{% if selected_date %}&date={{ selected_date|date:'Y-m-d' }}{% endif %}" aria-label="Next" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
+                <a class="page-link" href="?page={{ attendances.next_page_number }}{% if request.GET.lecture %}&lecture={{ request.GET.lecture }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next" style="color: #e6e6e6; background-color: #0a192f; border-color: #1e90ff;">
                     <span aria-hidden="true">»</span>
                 </a>
             </li>
@@ -153,23 +135,12 @@
     {% endif %}
 </div>
 
-<!-- JavaScript for Tooltips -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-});
-</script>
-
 <style>
-/* Override table styles for visibility */
+/* Table and form styles */
 .table {
-    width: 100%;
-    table-layout: auto;
     background-color: #1c2526 !important;
     border: 1px solid #1e90ff;
 }
-
 .table th {
     color: #1e90ff !important;
     background-color: #0a192f !important;
@@ -177,91 +148,76 @@ document.addEventListener('DOMContentLoaded', function() {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
     padding: 10px;
 }
-
 .table td {
     color: #e6e6e6 !important;
     background-color: #1c2526 !important;
     padding: 8px;
     text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
 }
-
 .table .text-muted {
     color: #8892b0 !important;
 }
-
-/* Minimum widths for columns */
 .table th.col-min-width, .table td {
     min-width: 120px;
 }
-
-.table th.col-actions-width, .table td:nth-child(8) {
+.table th.col-actions-width, .table td:nth-child(7) {
     min-width: 140px;
 }
-
-/* Ensure headers are white */
-h2 {
-    color: #e6e6e6 !important;
-}
-
-/* Card background */
-.card.bg-dark-blue {
-    background-color: #0a192f !important;
-    border: 1px solid #1e90ff;
-}
-
-/* Style for search and filter inputs */
 .form-control, .form-select {
     background-color: #1c2526 !important;
     color: #e6e6e6 !important;
     border: 1px solid #1e90ff !important;
 }
-
 .form-control::placeholder, .form-select::placeholder {
     color: #8892b0 !important;
 }
-
 .form-select option {
     background-color: #0a192f !important;
     color: #e6e6e6 !important;
 }
-
-/* Action buttons */
 .btn-warning {
     background-color: #ffd700 !important;
     color: #000000 !important;
     border: none;
 }
-
 .btn-warning:hover {
     background-color: #e6c200 !important;
 }
-
 .btn-danger {
     background-color: #dc3545 !important;
     border: none;
 }
-
 .btn-danger:hover {
     background-color: #c82333 !important;
 }
-
-/* Style for pagination links */
+.card.bg-dark-blue {
+    background-color: #0a192f !important;
+    border: 1px solid #1e90ff;
+}
 .page-link {
     color: #e6e6e6 !important;
     background-color: #0a192f !important;
     border-color: #1e90ff !important;
 }
-
 .page-item.active .page-link {
     background-color: #1e90ff !important;
     color: #0a192f !important;
     border-color: #1e90ff !important;
 }
-
 .page-item.disabled .page-link {
     color: #8892b0 !important;
     background-color: #1c2526 !important;
     border-color: #1e90ff !important;
+}
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+}
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000000 !important;
 }
 </style>
 {% endblock %}

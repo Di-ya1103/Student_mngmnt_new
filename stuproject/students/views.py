@@ -2,16 +2,22 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import Student, Subject, StudentResult, StudentProfile, Fee, Department, Course, StudentDepartmentCourse, Attendance
+from .models import (
+    Student, Subject, StudentResult, StudentProfile, Fee, Department, 
+    Course, StudentDepartmentCourse, Attendance, Enrollment, Lecture
+)
 from django.contrib.auth import authenticate, logout
 from django.core.paginator import Paginator
 from django.db.models import Q
 from datetime import datetime
 from decimal import Decimal
 import logging
+from datetime import date
+from django.utils import timezone
 from django.db import transaction
 from django.contrib.auth.views import PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
-
+from django.http import JsonResponse
+from django.db.models import F
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -22,30 +28,15 @@ def superuser_required(user):
 @login_required
 @user_passes_test(superuser_required, login_url='login/')
 def attendance_list(request):
-    attendances = Attendance.objects.all().select_related('student', 'subject').order_by('-date', 'student__id')
-    departments = Department.objects.all()
-    courses = Course.objects.all()
-    subjects = Subject.objects.all()
+    attendances = Attendance.objects.all().select_related('student', 'lecture__course').order_by('-lecture__date', 'student__id')
+    lectures = Lecture.objects.all()
 
     # Apply GET filters
-    department_id = request.GET.get('department')
-    course_id = request.GET.get('course')
-    subject_id = request.GET.get('subject')
-    date = request.GET.get('date')
+    lecture_id = request.GET.get('lecture')
     search_query = request.GET.get('search', '')
 
-    if department_id:
-        attendances = attendances.filter(student__department_course__department_id=department_id)
-    if course_id:
-        attendances = attendances.filter(student__department_course__course_id=course_id)
-    if subject_id:
-        attendances = attendances.filter(subject_id=subject_id)
-    if date:
-        try:
-            date_obj = datetime.strptime(date, '%Y-%m-%d').date()
-            attendances = attendances.filter(date=date_obj)
-        except ValueError:
-            messages.error(request, 'Invalid date format. Please use YYYY-MM-DD.')
+    if lecture_id:
+        attendances = attendances.filter(lecture_id=lecture_id)
     if search_query:
         attendances = attendances.filter(
             Q(student__first_name__icontains=search_query) |
@@ -59,271 +50,138 @@ def attendance_list(request):
 
     context = {
         'attendances': page_obj,
-        'departments': departments,
-        'courses': courses,
-        'subjects': subjects,
+        'lectures': lectures,
         'search_query': search_query,
     }
     return render(request, 'students/attendance_list.html', context)
 
 @login_required
-@user_passes_test(superuser_required, login_url='login/')
+@user_passes_test(lambda u: u.is_superuser, login_url='login/')
 def attendance_add(request):
-    departments = Department.objects.all()
     courses = Course.objects.all()
-    subjects = Subject.objects.all()
-    students = Student.objects.all().select_related('department_course')
-    filtered_students = students
-    selected_statuses = {}
-    today = datetime.now().date()
     form_data = {}
+    students = []
 
     if request.method == 'POST':
-        logger.debug("POST data: %s", dict(request.POST))
-        department_id = request.POST.get('department')
-        course_id = request.POST.get('course')
-        subject_id = request.POST.get('subject')
-        date_str = request.POST.get('date')
-
-        # Store form data for re-rendering
         form_data = {
-            'department': department_id,
-            'course': course_id,
-            'subject': subject_id,
-            'date': date_str,
+            'course_id': request.POST.get('course_id'),
+            'lecture_id': request.POST.get('lecture_id'),
+            'students': {key.replace('status_', ''): value for key, value in request.POST.items() if key.startswith('status_')}
         }
-
-        # Apply filters
-        if department_id:
-            filtered_students = filtered_students.filter(department_course__department_id=department_id)
-        if course_id:
-            filtered_students = filtered_students.filter(department_course__course_id=course_id)
-        logger.debug("Filtered students count: %d", filtered_students.count())
-
-        # Store selected statuses
-        for student in filtered_students:
-            attendance_key = f'attendance_{student.id}'
-            status = request.POST.get(attendance_key)
-            if status in ['Present', 'Absent', 'Late']:
-                selected_statuses[str(student.id)] = status
-
-        if 'save_action' in request.POST:
-            logger.debug("Save action triggered. Date: %s, Subject: %s", date_str, subject_id)
-            # Only require date, as subject is optional in the model
-            if not date_str:
-                logger.error("Missing date: %s", date_str)
-                messages.error(request, 'Date is required to save attendance.')
-                return render(request, 'students/attendance_add.html', {
-                    'departments': departments,
-                    'courses': courses,
-                    'subjects': subjects,
-                    'students': filtered_students,
-                    'selected_statuses': selected_statuses,
-                    'today': today,
-                    'form_data': form_data,
-                })
-
-            try:
-                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-                if date_obj > datetime.now().date():
-                    messages.error(request, 'Attendance date cannot be in the future.')
-                    return render(request, 'students/attendance_add.html', {
-                        'departments': departments,
-                        'courses': courses,
-                        'subjects': subjects,
-                        'students': filtered_students,
-                        'selected_statuses': selected_statuses,
-                        'today': today,
-                        'form_data': form_data,
-                    })
-            except ValueError:
-                logger.error("Invalid date format: %s", date_str)
-                messages.error(request, 'Invalid date format. Please use YYYY-MM-DD.')
-                return render(request, 'students/attendance_add.html', {
-                    'departments': departments,
-                    'courses': courses,
-                    'subjects': subjects,
-                    'students': filtered_students,
-                    'selected_statuses': selected_statuses,
-                    'today': today,
-                    'form_data': form_data,
-                })
-
-            # Get subject if provided, otherwise set to None
-            subject = None
-            if subject_id:
-                try:
-                    subject = get_object_or_404(Subject, id=subject_id)
-                except ValueError:
-                    logger.error("Invalid subject ID: %s", subject_id)
-                    messages.error(request, 'Invalid subject selected.')
-                    return render(request, 'students/attendance_add.html', {
-                        'departments': departments,
-                        'courses': courses,
-                        'subjects': subjects,
-                        'students': filtered_students,
-                        'selected_statuses': selected_statuses,
-                        'today': today,
-                        'form_data': form_data,
-                    })
-
-            saved_count = 0
-            with transaction.atomic():
-                for student in filtered_students:
-                    attendance_key = f'attendance_{student.id}'
-                    status = request.POST.get(attendance_key)
-                    if status in ['Present', 'Absent', 'Late']:
-                        try:
-                            Attendance.objects.update_or_create(
-                                student=student,
-                                date=date_obj,
-                                subject=subject,
-                                defaults={'status': status}
-                            )
-                            saved_count += 1
-                            logger.debug("Saved attendance for student %s on %s", student.id, date_obj)
-                        except Exception as e:
-                            logger.error("Error saving attendance for student %s: %s", student.id, str(e))
-                            messages.error(request, f'Error saving attendance for {student}: {str(e)}')
-                            return render(request, 'students/attendance_add.html', {
-                                'departments': departments,
-                                'courses': courses,
-                                'subjects': subjects,
-                                'students': filtered_students,
-                                'selected_statuses': selected_statuses,
-                                'today': today,
-                                'form_data': form_data,
-                            })
-
-            if saved_count > 0:
-                messages.success(request, f'Successfully saved {saved_count} attendance records!')
-                return redirect('students:attendance_list')
-            else:
-                logger.warning("No valid attendance statuses selected.")
-                messages.error(request, 'No attendance records were saved. Please select statuses for students.')
-                return render(request, 'students/attendance_add.html', {
-                    'departments': departments,
-                    'courses': courses,
-                    'subjects': subjects,
-                    'students': filtered_students,
-                    'selected_statuses': selected_statuses,
-                    'today': today,
-                    'form_data': form_data,
-                })
-
-        # Handle filter application
-        return render(request, 'students/attendance_add.html', {
-            'departments': departments,
-            'courses': courses,
-            'subjects': subjects,
-            'students': filtered_students,
-            'selected_statuses': selected_statuses,
-            'today': today,
-            'form_data': form_data,
-        })
-
-    # Handle GET requests
-    date_str = request.GET.get('date')
-    subject_id = request.GET.get('subject')
-    form_data = {
-        'date': date_str or today.strftime('%Y-%m-%d'),
-        'subject': subject_id,
-    }
-
-    if date_str and subject_id:
         try:
-            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-            subject = get_object_or_404(Subject, id=subject_id)
-            existing_attendances = Attendance.objects.filter(
-                student__in=filtered_students,
-                date=date_obj,
-                subject=subject
-            )
-            for attendance in existing_attendances:
-                selected_statuses[str(attendance.student.id)] = attendance.status
-        except ValueError:
-            logger.error("Invalid date format in GET: %s", date_str)
-            messages.error(request, 'Invalid date format in filter. Using today’s date.')
-            form_data['date'] = today.strftime('%Y-%m-%d')
+            lecture = get_object_or_404(Lecture, id=form_data['lecture_id'])
+            student_ids = list(form_data['students'].keys())
+            students = Student.objects.filter(id__in=student_ids)
 
-    department_id = request.GET.get('department')
-    course_id = request.GET.get('course')
-    if department_id:
-        filtered_students = filtered_students.filter(department_course__department_id=department_id)
-        form_data['department'] = department_id
-    if course_id:
-        filtered_students = filtered_students.filter(department_course__course_id=course_id)
-        form_data['course'] = course_id
+            with transaction.atomic():
+                existing_attendances = Attendance.objects.filter(lecture=lecture, student__in=students).select_related('student')
+                is_edit_mode = existing_attendances.exists()
 
-    context = {
-        'departments': departments,
+                for student in students:
+                    status = form_data['students'].get(str(student.id))
+                    if not status:
+                        continue
+                    Attendance.objects.update_or_create(
+                        lecture=lecture,
+                        student=student,
+                        defaults={'status': status}
+                    )
+                if is_edit_mode:
+                    messages.success(request, 'Attendance updated successfully!')
+                    logger.info(f"Attendance updated for lecture {lecture.id} by {request.user.username}")
+                else:
+                    messages.success(request, 'Attendance added successfully!')
+                    logger.info(f"Attendance added for lecture {lecture.id} by {request.user.username}")
+            return redirect('students:attendance_list')
+        except Exception as e:
+            messages.error(request, f'Error adding/updating attendance: {str(e)}')
+            logger.error(f"Error adding/updating attendance: {e}")
+            students = Student.objects.filter(id__in=student_ids)
+
+    elif request.method == 'GET' and 'lecture_id' in request.GET:
+        # Pre-populate form with existing attendance if lecture is selected
+        lecture_id = request.GET.get('lecture_id')
+        if lecture_id:
+            lecture = get_object_or_404(Lecture, id=lecture_id)
+            existing_attendances = Attendance.objects.filter(lecture=lecture).select_related('student')
+            form_data['lecture_id'] = lecture_id
+            form_data['students'] = {str(a.student_id): a.status for a in existing_attendances}
+            students = [a.student for a in existing_attendances]
+
+    return render(request, 'students/attendance_add.html', {
         'courses': courses,
-        'subjects': subjects,
-        'students': filtered_students,
-        'selected_statuses': selected_statuses,
-        'today': today,
+        'students': students,
         'form_data': form_data,
-    }
-    return render(request, 'students/attendance_add.html', context)
+        'today': timezone.now().date().isoformat(),  # Uses timezone.now()
+    })
+    
+@login_required
+@user_passes_test(lambda u: u.is_superuser, login_url='login/')
+def get_lectures(request):
+    course_id = request.GET.get('course_id')
+    if not course_id:
+        return JsonResponse({'error': 'Course ID is required'}, status=400)
+    try:
+        lectures = Lecture.objects.filter(course_id=course_id).values('id', 'date').annotate(subject_name=F('subject__name'))
+        return JsonResponse(list(lectures), safe=False)
+    except Exception as e:
+        logger.error(f"Error fetching lectures: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+        
+def get_lecture_students(request, lecture_id):
+    try:
+        lecture = get_object_or_404(Lecture, id=lecture_id)
+        # Get students directly associated with the lecture via the ManyToManyField
+        students = lecture.students.all().values('id', 'first_name', 'last_name', 'roll_number')
+        return JsonResponse(list(students), safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @login_required
-@user_passes_test(superuser_required, login_url='login/')
+@user_passes_test(lambda u: u.is_superuser, login_url='login/')
 def attendance_edit(request, attendance_id):
     attendance = get_object_or_404(Attendance, id=attendance_id)
-    students = Student.objects.all()
-    subjects = Subject.objects.all()
+    students = [attendance.student]  # Limit to the current student
+    courses = [attendance.lecture.course]  # Limit to the current course
+    lectures = [attendance.lecture]  # Limit to the current lecture
+
     if request.method == 'POST':
-        student_id = request.POST.get('student')
-        subject_id = request.POST.get('subject')
-        date = request.POST.get('date')
         status = request.POST.get('status')
+        if not status or status not in ['Present', 'Absent', 'Late']:
+            messages.error(request, 'Please select a valid status (Present, Absent, or Late).')
+            return render(request, 'students/attendance_edit.html', {
+                'attendance': attendance,
+                'students': students,
+                'courses': courses,
+                'lectures': lectures,
+                'today': timezone.now().date().isoformat(),
+            })
 
         try:
-            student = get_object_or_404(Student, id=student_id)
-        except ValueError:
-            messages.error(request, 'Please select a valid student.')
-            return render(request, 'students/attendance_edit.html', {'attendance': attendance, 'students': students, 'subjects': subjects})
-
-        # Subject is optional
-        subject = None
-        if subject_id:
-            try:
-                subject = get_object_or_404(Subject, id=subject_id)
-            except ValueError:
-                messages.error(request, 'Invalid subject selected.')
-                return render(request, 'students/attendance_edit.html', {'attendance': attendance, 'students': students, 'subjects': subjects})
-
-        try:
-            date_obj = datetime.strptime(date, '%Y-%m-%d').date()
-            if date_obj > datetime.now().date():
-                messages.error(request, 'Attendance date cannot be in the future.')
-                return render(request, 'students/attendance_edit.html', {'attendance': attendance, 'students': students, 'subjects': subjects})
-        except (ValueError, TypeError):
-            messages.error(request, 'Invalid date format. Please use YYYY-MM-DD.')
-            return render(request, 'students/attendance_edit.html', {'attendance': attendance, 'students': students, 'subjects': subjects})
-
-        if status not in ['Present', 'Absent', 'Late']:
-            messages.error(request, 'Invalid status. Please select Present, Absent, or Late.')
-            return render(request, 'students/attendance_edit.html', {'attendance': attendance, 'students': students, 'subjects': subjects})
-
-        if Attendance.objects.filter(student=student, date=date_obj, subject=subject).exclude(id=attendance.id).exists():
-            messages.error(request, 'An attendance record for this student, date, and subject already exists.')
-            return render(request, 'students/attendance_edit.html', {'attendance': attendance, 'students': students, 'subjects': subjects})
-
-        try:
-            attendance.student = student
-            attendance.subject = subject
-            attendance.date = date_obj
-            attendance.status = status
-            attendance.save()
-            messages.success(request, 'Attendance updated successfully!')
+            with transaction.atomic():
+                attendance.status = status
+                attendance.save()
+                messages.success(request, 'Attendance updated successfully!')
+                logger.info(f"Attendance updated for attendance {attendance.id} by {request.user.username}")
             return redirect('students:attendance_list')
         except Exception as e:
             logger.error(f'Error updating attendance: {e}')
             messages.error(request, f'Error updating attendance: {e}')
-            return render(request, 'students/attendance_edit.html', {'attendance': attendance, 'students': students, 'subjects': subjects})
+            return render(request, 'students/attendance_edit.html', {
+                'attendance': attendance,
+                'students': students,
+                'courses': courses,
+                'lectures': lectures,
+                'today': timezone.now().date().isoformat(),
+            })
 
-    context = {'attendance': attendance, 'students': students, 'subjects': subjects}
+    context = {
+        'attendance': attendance,
+        'students': students,
+        'courses': courses,
+        'lectures': lectures,
+        'today': timezone.now().date().isoformat(),
+    }
     return render(request, 'students/attendance_edit.html', context)
 
 @login_required
@@ -340,8 +198,523 @@ def attendance_delete(request, attendance_id):
             messages.error(request, f'Error deleting attendance: {e}')
             return render(request, 'students/attendance_delete.html', {'attendance': attendance})
     return render(request, 'students/attendance_delete.html', {'attendance': attendance})
+from django.http import JsonResponse
 
-# Unchanged Non-Attendance Views (kept exactly as provided)
+
+@login_required
+@user_passes_test(superuser_required, login_url='login/')
+def lectures_list(request):
+    lectures = Lecture.objects.all().select_related('course', 'subject').order_by('-date')
+    courses = Course.objects.all()
+    subjects = Subject.objects.all()
+
+    # Apply GET filters
+    course_id = request.GET.get('course')
+    subject_id = request.GET.get('subject')
+    search_query = request.GET.get('search', '')
+
+    if course_id:
+        lectures = lectures.filter(course_id=course_id)
+    if subject_id:
+        lectures = lectures.filter(subject_id=subject_id)
+    if search_query:
+        lectures = lectures.filter(
+            Q(course__name__icontains=search_query) |
+            Q(subject__name__icontains=search_query)
+        )
+
+    paginator = Paginator(lectures, 5)  # 5 lectures per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'lectures': page_obj,
+        'courses': courses,
+        'subjects': subjects,
+        'search_query': search_query,
+    }
+    return render(request, 'students/lectures_list.html', context)
+
+@login_required
+@user_passes_test(superuser_required, login_url='login/')
+def add_lecture(request):
+    courses = Course.objects.all()
+    subjects = Subject.objects.all()
+    students = Student.objects.all().select_related('department_course__course')  # For validation errors
+    today = datetime.now().date().strftime('%Y-%m-%d')
+
+    if request.method == 'POST':
+        logger.debug(f"POST data: {request.POST}")  # Debug POST data
+        course_id = request.POST.get('course_id')
+        subject_id = request.POST.get('subject_id')
+        date = request.POST.get('date')
+        student_ids = request.POST.getlist('students')
+
+        form_data = {
+            'course': course_id,
+            'subject': subject_id,
+            'date': date,
+            'students': student_ids,
+        }
+
+        try:
+            course = get_object_or_404(Course, id=course_id)
+            subject = get_object_or_404(Subject, id=subject_id) if subject_id else None
+            lecture_date = datetime.strptime(date, '%Y-%m-%d').date()
+
+            # Validate date
+            if lecture_date < datetime.now().date():
+                messages.error(request, 'Lecture date cannot be in the past.')
+                return render(request, 'students/add_lecture.html', {
+                    'courses': courses,
+                    'subjects': subjects,
+                    'students': students,
+                    'form_data': form_data,
+                    'today': today,
+                })
+
+            # Create lecture
+            lecture = Lecture.objects.create(
+                course=course,
+                subject=subject,
+                date=lecture_date
+            )
+            # Add selected students
+            if student_ids:
+                selected_students = Student.objects.filter(
+                    id__in=student_ids,
+                    enrollment__course=course
+                )
+                lecture.students.set(selected_students)
+                logger.debug(f"Added {selected_students.count()} students to lecture {lecture.id}")
+            else:
+                logger.debug("No students selected for lecture")
+
+            messages.success(request, 'Lecture added successfully!')
+            logger.info(f"Lecture for {course.name} on {lecture_date} added by {request.user.username}")
+            return redirect('students:lectures_list')
+
+        except ValueError as e:
+            logger.error(f"Error adding lecture: {e}")
+            messages.error(request, 'Invalid date format or input.')
+            return render(request, 'students/add_lecture.html', {
+                'courses': courses,
+                'subjects': subjects,
+                'students': students,
+                'form_data': form_data,
+                'today': today,
+            })
+        except Exception as e:
+            logger.error(f"Error adding lecture: {e}")
+            messages.error(request, f'Error adding lecture: {str(e)}')
+            return render(request, 'students/add_lecture.html', {
+                'courses': courses,
+                'subjects': subjects,
+                'students': students,
+                'form_data': form_data,
+                'today': today,
+            })
+
+    context = {
+        'courses': courses,
+        'subjects': subjects,
+        'students': students,
+        'form_data': {},
+        'today': today,
+    }
+    return render(request, 'students/add_lecture.html', context)
+
+@login_required
+@user_passes_test(superuser_required, login_url='login/')
+def get_students_by_course(request):
+    course_id = request.GET.get('course_id')
+    logger.debug(f"Fetching students for course_id: {course_id}")
+
+    if not course_id:
+        logger.warning("No course_id provided in request")
+        return JsonResponse({'error': 'Course ID required'}, status=400)
+
+    try:
+        course = Course.objects.get(id=course_id)
+        students = Student.objects.filter(
+            enrollment__course_id=course_id
+        ).select_related('department_course__course', 'department_course__department').values(
+            'id', 'first_name', 'last_name', 'roll_number'
+        )
+        student_list = list(students)
+        logger.debug(f"Found {len(student_list)} students via Enrollment for course {course_id}")
+
+        if not student_list:
+            students = Student.objects.filter(
+                department_course__course_id=course_id
+            ).select_related('department_course__course', 'department_course__department').values(
+                'id', 'first_name', 'last_name', 'roll_number'
+            )
+            student_list = list(students)
+            logger.debug(f"Found {len(student_list)} students via StudentDepartmentCourse for course {course_id}")
+
+        return JsonResponse(student_list, safe=False)
+    except Course.DoesNotExist:
+        logger.error(f"Course {course_id} does not exist")
+        return JsonResponse({'error': 'Invalid course ID'}, status=404)
+    except Exception as e:
+        logger.error(f"Error fetching students for course {course_id}: {str(e)}")
+        return JsonResponse({'error': f'Error fetching students: {str(e)}'}, status=500)
+    
+@login_required
+@user_passes_test(superuser_required, login_url='login/')
+def enrollment_add(request):
+    courses = Course.objects.all()
+    students = Student.objects.all().select_related('department_course__course', 'department_course__department')
+    form_data = {}
+
+    if request.method == 'POST':
+        logger.debug(f"POST data: {request.POST}")
+        course_id = request.POST.get('course_id')
+        student_ids = request.POST.getlist('students')
+
+        form_data = {
+            'course_id': course_id,
+            'students': student_ids,
+        }
+
+        try:
+            course = get_object_or_404(Course, id=course_id)
+            department = course.department
+
+            # Validate students
+            if not student_ids:
+                messages.error(request, 'Please select at least one student.')
+                return render(request, 'students/enrollment_add.html', {
+                    'courses': courses,
+                    'students': students,
+                    'form_data': form_data,
+                })
+
+            # Create enrollments
+            enrolled_count = 0
+            with transaction.atomic():
+                for student_id in student_ids:
+                    student = get_object_or_404(Student, id=student_id)
+                    # Check if already enrolled
+                    if not Enrollment.objects.filter(student=student, course=course).exists():
+                        Enrollment.objects.create(student=student, course=course)
+                        # Create StudentDepartmentCourse if not exists
+                        StudentDepartmentCourse.objects.get_or_create(
+                            student=student,
+                            department=department,
+                            course=course
+                        )
+                        enrolled_count += 1
+
+            if enrolled_count > 0:
+                messages.success(request, f'Successfully enrolled {enrolled_count} student(s).')
+                logger.info(f"Enrolled {enrolled_count} students in course {course.id} by {request.user.username}")
+                return redirect('students:enrollment_list')
+            else:
+                messages.info(request, 'No new students were enrolled (already enrolled).')
+                return redirect('students:enrollment_list')
+
+        except Exception as e:
+            logger.error(f"Error adding enrollment: {e}")
+            messages.error(request, f'Error enrolling students: {str(e)}')
+            return render(request, 'students/enrollment_add.html', {
+                'courses': courses,
+                'students': students,
+                'form_data': form_data,
+            })
+
+    context = {
+        'courses': courses,
+        'students': students,
+        'form_data': {},
+    }
+    return render(request, 'students/enrollment_add.html', context)
+
+@login_required
+@user_passes_test(superuser_required, login_url='login/')
+def get_students_not_enrolled(request):
+    course_id = request.GET.get('course_id')
+    logger.debug(f"Fetching non-enrolled students for course_id: {course_id}")
+
+    if not course_id:
+        logger.warning("No course_id provided in request")
+        return JsonResponse({'error': 'Course ID required'}, status=400)
+
+    try:
+        course = Course.objects.get(id=course_id)
+        # Get students not enrolled in the course
+        enrolled_student_ids = Enrollment.objects.filter(course_id=course_id).values_list('student_id', flat=True)
+        students = Student.objects.exclude(
+            id__in=enrolled_student_ids
+        ).select_related('department_course__course', 'department_course__department').values(
+            'id', 'first_name', 'last_name', 'roll_number'
+        )
+        student_list = list(students)
+        logger.debug(f"Found {len(student_list)} non-enrolled students for course {course_id}")
+        return JsonResponse(student_list, safe=False)
+    except Course.DoesNotExist:
+        logger.error(f"Course {course_id} does not exist")
+        return JsonResponse({'error': 'Invalid course ID'}, status=404)
+    except Exception as e:
+        logger.error(f"Error fetching non-enrolled students for course {course_id}: {str(e)}")
+        return JsonResponse({'error': f'Error fetching students: {str(e)}'}, status=500)
+    
+@login_required
+@user_passes_test(superuser_required, login_url='login/')
+def enrollment_list(request):
+    enrollments = Enrollment.objects.all().select_related('student', 'course')
+    context = {'enrollments': enrollments}
+    return render(request, 'students/enrollment_list.html', context)
+@login_required
+@user_passes_test(superuser_required, login_url='login/')
+def edit_lecture(request, lecture_id):
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    courses = Course.objects.all()
+    subjects = Subject.objects.all()
+    students = Student.objects.filter(enrollment__course=lecture.course).select_related('department_course__course', 'department_course__department')
+    today = datetime.now().date().strftime('%Y-%m-%d')
+
+    if request.method == 'POST':
+        logger.debug(f"POST data: {request.POST}")
+        course_id = request.POST.get('course_id')
+        subject_id = request.POST.get('subject_id')
+        date = request.POST.get('date')
+        student_ids = request.POST.getlist('students')
+
+        form_data = {
+            'course_id': course_id,
+            'subject_id': subject_id,
+            'date': date,
+            'students': student_ids,
+        }
+
+        try:
+            course = get_object_or_404(Course, id=course_id)
+            subject = get_object_or_404(Subject, id=subject_id) if subject_id else None
+            lecture_date = datetime.strptime(date, '%Y-%m-%d').date()
+
+            # Validate date
+            if lecture_date < datetime.now().date():
+                messages.error(request, 'Lecture date cannot be in the past.')
+                return render(request, 'students/edit_lecture.html', {
+                    'lecture': lecture,
+                    'courses': courses,
+                    'subjects': subjects,
+                    'students': students,
+                    'form_data': form_data,
+                    'today': today,
+                })
+
+            # Update lecture
+            lecture.course = course
+            lecture.subject = subject
+            lecture.date = lecture_date
+            lecture.save()
+
+            # Update students
+            if student_ids:
+                selected_students = Student.objects.filter(
+                    id__in=student_ids,
+                    enrollment__course=course
+                )
+                lecture.students.set(selected_students)
+                logger.debug(f"Updated {selected_students.count()} students for lecture {lecture.id}")
+            else:
+                lecture.students.clear()
+                logger.debug("No students selected for lecture")
+
+            messages.success(request, 'Lecture updated successfully!')
+            logger.info(f"Lecture {lecture.id} updated by {request.user.username}")
+            return redirect('students:lectures_list')
+
+        except ValueError as e:
+            logger.error(f"Error updating lecture: {e}")
+            messages.error(request, 'Invalid date format or input.')
+            return render(request, 'students/edit_lecture.html', {
+                'lecture': lecture,
+                'courses': courses,
+                'subjects': subjects,
+                'students': students,
+                'form_data': form_data,
+                'today': today,
+            })
+        except Exception as e:
+            logger.error(f"Error updating lecture: {e}")
+            messages.error(request, f'Error updating lecture: {str(e)}')
+            return render(request, 'students/edit_lecture.html', {
+                'lecture': lecture,
+                'courses': courses,
+                'subjects': subjects,
+                'students': students,
+                'form_data': form_data,
+                'today': today,
+            })
+
+    context = {
+        'lecture': lecture,
+        'courses': courses,
+        'subjects': subjects,
+        'students': students,
+        'form_data': {},
+        'today': today,
+    }
+    return render(request, 'students/edit_lecture.html', context)
+
+@login_required
+@user_passes_test(superuser_required, login_url='login/')
+def delete_lecture(request, lecture_id):
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    if request.method == 'POST':
+        try:
+            lecture.delete()
+            messages.success(request, 'Lecture deleted successfully!')
+            return redirect('students:lectures_list')
+        except Exception as e:
+            logger.error(f"Error deleting lecture: {e}")
+            messages.error(request, f'Error deleting lecture: {e}')
+            return render(request, 'students/delete_lecture.html', {'lecture': lecture})
+    return render(request, 'students/delete_lecture.html', {'lecture': lecture})
+
+# Updated Non-Superuser Views
+@login_required
+def student_detail(request, student_id):
+    if request.user.is_superuser:
+        student = get_object_or_404(Student, id=student_id)
+        results = StudentResult.objects.filter(student=student)
+    else:
+        try:
+            profile = StudentProfile.objects.get(user=request.user)
+            student = profile.student
+            if student.id != student_id:
+                messages.error(request, "You are not authorized to view this student's details.")
+                return redirect('students:profile')
+            results = StudentResult.objects.filter(student=student)
+        except StudentProfile.DoesNotExist:
+            messages.error(request, "No student profile found for your account.")
+            return redirect('students:student_list')
+
+    # Get selected semesters and subjects from GET parameters for filtering
+    selected_semester_ids = request.GET.getlist('semesters')
+    selected_subject_ids = request.GET.getlist('subjects')
+    selected_attendance_course_ids = request.GET.getlist('attendance_courses')
+    attendance_start_date = request.GET.get('attendance_start_date')
+    attendance_end_date = request.GET.get('attendance_end_date')
+    
+    # Get all semesters and subjects for the student
+    all_semesters = StudentResult.objects.filter(student=student).values_list('semester', flat=True).distinct().order_by('semester')
+    all_subjects = Subject.objects.filter(studentresult__student=student).distinct()
+    all_attendance_courses = Course.objects.filter(lecture__attendance__student=student).distinct()
+
+    # Filter results by semesters and subjects
+    if selected_semester_ids or selected_subject_ids:
+        query = Q()
+        if selected_semester_ids:
+            query &= Q(semester__in=selected_semester_ids)
+        if selected_subject_ids:
+            query &= Q(subject__in=selected_subject_ids)
+        results = results.filter(query).order_by('semester', 'subject__name')
+        semesters_to_display = selected_semester_ids if selected_semester_ids else all_semesters
+    else:
+        semesters_to_display = all_semesters
+
+    # Prepare semester-wise data
+    semester_data = []
+    for semester in semesters_to_display:
+        semester_results = results.filter(semester=semester)
+        if semester_results.exists():
+            grades = [result.grade for result in semester_results if result.grade]
+            grade_counts = {grade: grades.count(grade) for grade in set(grades) if grade}
+            grade_pairs = sorted([(grade, count) for grade, count in grade_counts.items()], key=lambda x: x[0])
+            semester_data.append({
+                'semester': semester,
+                'results': semester_results,
+                'grade_data': {
+                    'labels': list(grade_counts.keys()),
+                    'data': list(grade_counts.values()),
+                },
+                'grade_pairs': grade_pairs,
+            })
+
+    # Get attendance records with course and date filter
+    attendance_query = Attendance.objects.filter(student=student).order_by('-lecture__date')
+    if selected_attendance_course_ids:
+        attendance_query = attendance_query.filter(lecture__course__in=selected_attendance_course_ids)
+    if attendance_start_date:
+        attendance_query = attendance_query.filter(lecture__date__gte=attendance_start_date)
+    if attendance_end_date:
+        attendance_query = attendance_query.filter(lecture__date__lte=attendance_end_date)
+    attendances = attendance_query.select_related('lecture__course')
+
+    # Get student's fees
+    fees = Fee.objects.filter(student=student).order_by('due_date')
+
+    # Get the student's department and course
+    try:
+        student_dept_course = student.department_course
+    except StudentDepartmentCourse.DoesNotExist:
+        student_dept_course = None
+        logger.debug(f"No department/course assignment found for student ID {student_id}")
+
+    # Paginate results
+    paginator = Paginator(results, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'student': student,
+        'results': page_obj,
+        'grade_data': {'labels': [], 'data': []},  # Overall grade data (empty for now)
+        'student_dept_course': student_dept_course,
+        'all_semesters': all_semesters,
+        'selected_semester_ids': selected_semester_ids,
+        'all_subjects': all_subjects,
+        'selected_subject_ids': selected_subject_ids,
+        'semester_data': semester_data,
+        'all_attendance_courses': all_attendance_courses,
+        'selected_attendance_course_ids': selected_attendance_course_ids,
+        'selected_attendance_start_date': attendance_start_date,
+        'selected_attendance_end_date': attendance_end_date,
+        'attendances': attendances,
+        'fees': fees,
+    }
+    return render(request, 'students/student_detail.html', context)
+
+@login_required
+def attendance(request):
+    try:
+        profile = StudentProfile.objects.get(user=request.user)
+        student = profile.student
+    except StudentProfile.DoesNotExist:
+        messages.error(request, "No student profile found for your account.")
+        return redirect('students:student_list')
+
+    selected_attendance_course_ids = request.GET.getlist('attendance_courses')
+    attendance_start_date = request.GET.get('attendance_start_date')
+    attendance_end_date = request.GET.get('attendance_end_date')
+    all_attendance_courses = Course.objects.filter(lecture__attendance__student=student).distinct()
+
+    attendance_query = Attendance.objects.filter(student=student).order_by('-lecture__date')
+    if selected_attendance_course_ids:
+        attendance_query = attendance_query.filter(lecture__course__in=selected_attendance_course_ids)
+    if attendance_start_date:
+        attendance_query = attendance_query.filter(lecture__date__gte=attendance_start_date)
+    if attendance_end_date:
+        attendance_query = attendance_query.filter(lecture__date__lte=attendance_end_date)
+    attendances = attendance_query.select_related('lecture__course')
+
+    context = {
+        'student': student,
+        'all_attendance_courses': all_attendance_courses,
+        'selected_attendance_course_ids': selected_attendance_course_ids,
+        'selected_attendance_start_date': attendance_start_date,
+        'selected_attendance_end_date': attendance_end_date,
+        'attendances': attendances,
+    }
+    return render(request, 'students/attendance.html', context)
+
+# ... (Other views remain unchanged)
+# Unchanged Non-Attendance and Non-Classroom Views
 @login_required
 @user_passes_test(superuser_required, login_url='login/')
 def edit_fee(request, fee_id):
@@ -1040,44 +1413,152 @@ def delete_student(request, student_id):
     messages.success(request, 'Student deleted successfully!')
     return redirect('students:student_list')
 
+
 @login_required
 @user_passes_test(superuser_required, login_url='login/')
 def add_subject(request):
+    semester_choices = [(i, f"Semester {i}") for i in range(1, 9)]  # Semesters 1-8
     if request.method == 'POST':
-        name = request.POST['name']
-        code = request.POST['code']
-        try:
-            Subject.objects.create(name=name, code=code)
-            messages.success(request, 'Subject added successfully!')
-            return redirect('students:subjects_list')
-        except Exception as e:
-            messages.error(request, f'Error adding subject: {e}')
-    return render(request, 'students/add_subject.html')
+        name = request.POST.get('name')
+        code = request.POST.get('code')
+        semester = request.POST.get('semester')
 
+        form_data = {'name': name, 'code': code, 'semester': semester}
+
+        # Validate inputs
+        if not all([name, code, semester]):
+            messages.error(request, 'All fields are required.')
+            return render(request, 'students/add_subject.html', {
+                'semester_choices': semester_choices,
+                'form_data': form_data,
+            })
+
+        try:
+            semester = int(semester)
+            if semester not in range(1, 9):
+                messages.error(request, 'Invalid semester selected.')
+                return render(request, 'students/add_subject.html', {
+                    'semester_choices': semester_choices,
+                    'form_data': form_data,
+                })
+
+            # Check for duplicate subject code
+            if Subject.objects.filter(code=code).exists():
+                messages.error(request, 'Subject code already exists.')
+                return render(request, 'students/add_subject.html', {
+                    'semester_choices': semester_choices,
+                    'form_data': form_data,
+                })
+
+            # Create subject
+            Subject.objects.create(
+                name=name.strip(),
+                code=code.strip(),
+                semester=semester
+            )
+            messages.success(request, 'Subject added successfully!')
+            logger.info(f"Subject {name} (Code: {code}) added by {request.user.username}")
+            return redirect('students:subjects_list')
+
+        except ValueError as e:
+            logger.error(f"Error adding subject: {e}")
+            messages.error(request, 'Invalid semester value.')
+            return render(request, 'students/add_subject.html', {
+                'semester_choices': semester_choices,
+                'form_data': form_data
+            })
+
+        except Exception as e:
+            logger.error(f"Error adding subject: {e}")
+            messages.error(request, f'Error adding subject: {str(e)}')
+            return render(request, 'students/add_subject.html', {
+                'semester_choices': semester_choices,
+                'form_data': form_data,
+            })
+
+    context = {
+        'semester_choices': semester_choices,
+        'form_data': {},
+    }
+    return render(request, 'students/add_subject.html', context)
 @login_required
 @user_passes_test(superuser_required, login_url='login/')
+
 def edit_subject(request, subject_id):
     subject = get_object_or_404(Subject, id=subject_id)
+    semester_choices = [(i, f"Semester {i}") for i in range(1, 9)]  # Semesters 1-8
+
     if request.method == 'POST':
-        name = request.POST['name'].strip()
-        code = request.POST['code'].strip()
+        name = request.POST.get('name')
+        code = request.POST.get('code')
+        semester = request.POST.get('semester')
 
-        # Validate name
-        if not name:
-            messages.error(request, 'Subject name is required.')
-            return render(request, 'students/edit_subject.html', {'subject': subject})
+        form_data = {'name': name, 'code': code, 'semester': semester}
 
-        # Validate code uniqueness (excluding the current subject)
-        if Subject.objects.filter(code=code).exclude(id=subject.id).exists():
-            messages.error(request, 'A subject with this code already exists.')
-            return render(request, 'students/edit_subject.html', {'subject': subject})
+        # Validate inputs
+        if not all([name, code, semester]):
+            messages.error(request, 'All fields are required.')
+            return render(request, 'students/edit_subject.html', {
+                'subject': subject,
+                'semester_choices': semester_choices,
+                'form_data': form_data,
+            })
 
-        subject.name = name
-        subject.code = code
-        subject.save()
-        messages.success(request, 'Subject updated successfully!')
-        return redirect('students:subjects_list')
-    context = {'subject': subject}
+        try:
+            semester = int(semester)
+            if semester not in range(1, 9):
+                messages.error(request, 'Invalid semester selected.')
+                return render(request, 'students/edit_subject.html', {
+                    'subject': subject,
+                    'semester_choices': semester_choices,
+                    'form_data': form_data,
+                })
+
+            # Check for duplicate subject code (excluding current subject)
+            if Subject.objects.filter(code=code).exclude(id=subject.id).exists():
+                messages.error(request, 'Subject code already exists.')
+                return render(request, 'students/edit_subject.html', {
+                    'subject': subject,
+                    'semester_choices': semester_choices,
+                    'form_data': form_data,
+                })
+
+            # Update subject
+            subject.name = name.strip()
+            subject.code = code.strip()
+            subject.semester = semester
+            subject.save()
+            messages.success(request, 'Subject updated successfully!')
+            logger.info(f"Subject {subject.name} (Code: {subject.code}) updated by {request.user.username}")
+            return redirect('students:subjects_list')
+
+        except ValueError as e:
+            logger.error(f"Error updating subject {subject.id}: {e}")
+            messages.error(request, 'Invalid semester value.')
+            return render(request, 'students/edit_subject.html', {
+                'subject': subject,
+                'semester_choices': semester_choices,
+                'form_data': form_data,
+            })
+
+        except Exception as e:
+            logger.error(f"Error updating subject {subject.id}: {e}")
+            messages.error(request, f'Error updating subject: {str(e)}')
+            return render(request, 'students/edit_subject.html', {
+                'subject': subject,
+                'semester_choices': semester_choices,
+                'form_data': form_data,
+            })
+
+    context = {
+        'subject': subject,
+        'semester_choices': semester_choices,
+        'form_data': {
+            'name': subject.name,
+            'code': subject.code,
+            'semester': subject.semester,
+        },
+    }
     return render(request, 'students/edit_subject.html', context)
 
 @login_required
@@ -1194,9 +1675,6 @@ def delete_result(request, result_id):
     messages.success(request, 'Result deleted successfully!')
     return redirect('students:results_list')
 
-# File: C:\Student_mngmnt_new\stuproject\students\views.py
-# Line: ~1212 (in student_detail view)
-
 @login_required
 def student_detail(request, student_id):
     if request.user.is_superuser:
@@ -1299,6 +1777,7 @@ def student_detail(request, student_id):
         'fees': fees,
     }
     return render(request, 'students/student_detail.html', context)
+
 @login_required
 def profile(request):
     try:
@@ -1328,19 +1807,38 @@ def attendance(request):
         messages.error(request, "No student profile found for your account.")
         return redirect('students:student_list')
 
+    # Get filter parameters
     selected_attendance_subject_ids = request.GET.getlist('attendance_subjects')
     attendance_start_date = request.GET.get('attendance_start_date')
     attendance_end_date = request.GET.get('attendance_end_date')
-    all_attendance_subjects = Subject.objects.filter(attendance__student=student).distinct()
 
-    attendance_query = Attendance.objects.filter(student=student).order_by('-date')
+    # Correctly fetch subjects related to the student's attendance through lectures
+    all_attendance_subjects = Subject.objects.filter(
+        lecture__attendance__student=student
+    ).distinct()
+
+    # Build attendance query
+    attendance_query = Attendance.objects.filter(student=student).select_related('lecture__course', 'lecture__subject').order_by('-lecture__date')
     if selected_attendance_subject_ids:
-        attendance_query = attendance_query.filter(subject__in=selected_attendance_subject_ids)
+        attendance_query = attendance_query.filter(lecture__subject__in=selected_attendance_subject_ids)
     if attendance_start_date:
-        attendance_query = attendance_query.filter(date__gte=attendance_start_date)
+        attendance_query = attendance_query.filter(lecture__date__gte=attendance_start_date)
     if attendance_end_date:
-        attendance_query = attendance_query.filter(date__lte=attendance_end_date)
-    attendances = attendance_query.select_related('subject')
+        attendance_query = attendance_query.filter(lecture__date__lte=attendance_end_date)
+
+    # Group attendance by lecture
+    lectures_with_attendance = {}
+    for attendance in attendance_query:
+        lecture = attendance.lecture
+        if lecture.id not in lectures_with_attendance:
+            lectures_with_attendance[lecture.id] = {
+                'lecture': lecture,
+                'attendances': [],
+            }
+        lectures_with_attendance[lecture.id]['attendances'].append(attendance)
+
+    # Convert to list for template iteration
+    lecture_attendance_list = list(lectures_with_attendance.values())
 
     context = {
         'student': student,
@@ -1348,10 +1846,9 @@ def attendance(request):
         'selected_attendance_subject_ids': selected_attendance_subject_ids,
         'selected_attendance_start_date': attendance_start_date,
         'selected_attendance_end_date': attendance_end_date,
-        'attendances': attendances,
+        'lecture_attendance_list': lecture_attendance_list,
     }
     return render(request, 'students/attendance.html', context)
-
 @login_required
 def fees(request):
     try:
@@ -1428,7 +1925,7 @@ def results(request):
     return render(request, 'students/results.html', context)
 
 @login_required
-@user_passes_test(superuser_required, login_url='login/')
+@user_passes_test(lambda u: u.is_superuser)
 def help_view(request):
     return render(request, 'help.html')
 
@@ -1495,4 +1992,3 @@ def assign_department_course(request):
         "student_dept_courses": student_dept_courses,
     }
     return render(request, "assign_department_course.html", context)
-

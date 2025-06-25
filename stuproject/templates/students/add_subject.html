@@ -1,37 +1,91 @@
-
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Add Subject - Student Management System{% endblock %}
 
 {% block content %}
-<div class="container mt-5" data-aos="fade-up">
-    <h2>Add Subject</h2>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            {% if messages %}
-            <div class="alert-container">
-                {% for message in messages %}
-                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            <form method="POST" action="{% url 'students:add_subject' %}">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="name" class="form-label">Name</label>
-                    <input type="text" class="form-control" id="name" name="name" required>
-                </div>
-                <div class="mb-3">
-                    <label for="code" class="form-label">Code</label>
-                    <input type="text" class="form-control" id="code" name="code" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Add Subject</button>
-                <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Cancel</a>
-            </form>
+<div class="container mt-5 mb-5">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Add Subject Form -->
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white"><i class="fas fa-book me-2"></i>Add Subject</h2>
+        <form method="POST" class="d-flex flex-column gap-3">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="name" class="form-label text-white">Subject Name</label>
+                <input type="text" name="name" id="name" class="form-control" value="{{ form_data.name }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="code" class="form-label text-white">Subject Code</label>
+                <input type="text" name="code" id="code" class="form-control" value="{{ form_data.code }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="semester" class="form-label text-white">Semester</label>
+                <select name="semester" id="semester" class="form-select" required>
+                    <option value="">Select Semester</option>
+                    {% for value, label in semester_choices %}
+                    <option value="{{ value }}" {% if form_data.semester == value|stringformat:"s" %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning text-dark">
+                    <i class="fas fa-save"></i> Save Subject
+                </button>
+                <a href="{% url 'students:subjects_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
     </div>
 </div>
+
+<style>
+/* Form styles */
+.form-control, .form-select {
+    background-color: #1c2526 !important;
+    color: #e6e6e6 !important;
+    border: 1px solid #1e90ff !important;
+}
+.form-control::placeholder, .form-select::placeholder {
+    color: #8892b0 !important;
+}
+.form-select option {
+    background-color: #0a192f !important;
+    color: #e6e6e6 !important;
+}
+.btn-warning {
+    background-color: #ffd700 !important;
+    color: #000000 !important;
+    border: none;
+}
+.btn-warning:hover {
+    background-color: #e6c200 !important;
+}
+.btn-secondary {
+    background-color: #6c757d !important;
+    border: none;
+}
+.btn-secondary:hover {
+    background-color: #5a6268 !important;
+}
+.card.bg-dark-blue {
+    background-color: #0a192f !important;
+    border: 1px solid #1e90ff;
+}
+</style>
 {% endblock %}

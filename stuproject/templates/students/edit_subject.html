@@ -1,48 +1,91 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Edit Subject - Student Management System{% endblock %}
 
 {% block content %}
-<div class="container mt-5" data-aos="fade-up">
-    <h2>Edit Subject: {{ subject.name }}</h2>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <form method="POST" action="{% url 'students:edit_subject' subject.id %}">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="name" class="form-label">Name</label>
-                    <input type="text" class="form-control" id="name" name="name" value="{{ subject.name }}" required>
-                </div>
-                <div class="mb-3">
-                    <label for="code" class="form-label">Code</label>
-                    <input type="text" class="form-control" id="code" name="code" value="{{ subject.code }}" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a href="{% url 'students:subjects_list' %}" class="btn btn-secondary">Cancel</a>
-            </form>
+<div class="container mt-5 mb-5">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Edit Subject Form -->
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white"><i class="fas fa-book me-2"></i>Edit Subject: {{ subject.name }}</h2>
+        <form method="POST" action="{% url 'students:edit_subject' subject.id %}" class="d-flex flex-column gap-3">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="name" class="form-label text-white">Subject Name</label>
+                <input type="text" name="name" id="name" class="form-control" value="{{ form_data.name|default:subject.name }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="code" class="form-label text-white">Subject Code</label>
+                <input type="text" name="code" id="code" class="form-control" value="{{ form_data.code|default:subject.code }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="semester" class="form-label text-white">Semester</label>
+                <select name="semester" id="semester" class="form-select" required>
+                    <option value="">Select Semester</option>
+                    {% for value, label in semester_choices %}
+                    <option value="{{ value }}" {% if form_data.semester == value|stringformat:"s" or subject.semester == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning text-dark">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+                <a href="{% url 'students:subjects_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 
 <style>
-/* Override form label and input text color for visibility */
-.form-label {
-    color: #e6e6e6 !important; /* Chalk-like white */
+/* Form styles */
+.form-control, .form-select {
+    background-color: #1c2526 !important;
+    color: #e6e6e6 !important;
+    border: 1px solid #1e90ff !important;
 }
-
-.form-control {
-    color: #e6e6e6 !important; /* Ensure input text is white */
-    background: rgba(255, 255, 255, 0.1) !important; /* Match form background */
+.form-control::placeholder, .form-select::placeholder {
+    color: #8892b0 !important;
 }
-
-/* Ensure headers are white */
-h2 {
-    color: #ffffff !important;
+.form-select option {
+    background-color: #0a192f !important;
+    color: #e6e6e6 !important;
 }
-
-/* Card background for contrast */
-.card-body {
-    background-color: rgba(0, 0, 0, 0.3); /* Darker background for chalkboard effect */
+.btn-warning {
+    background-color: #ffd700 !important;
+    color: #000000 !important;
+    border: none;
+}
+.btn-warning:hover {
+    background-color: #e6c200 !important;
+}
+.btn-secondary {
+    background-color: #6c757d !important;
+    border: none;
+}
+.btn-secondary:hover {
+    background-color: #5a6268 !important;
+}
+.card.bg-dark-blue {
+    background-color: #0a192f !important;
+    border: 1px solid #1e90ff;
 }
 </style>
 {% endblock %}

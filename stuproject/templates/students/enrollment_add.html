@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Enrollment - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Enrollment Form -->
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white"><i class="fas fa-user-plus me-2"></i>Add Enrollment</h2>
+        <form method="POST" id="enrollment-form">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="course_id" class="form-label text-white">Course</label>
+                <select name="course_id" id="course_id" class="form-select" required>
+                    <option value="">Select Course</option>
+                    {% for course in courses %}
+                        <option value="{{ course.id }}" {% if form_data.course_id == course.id|stringformat:"s" %}selected{% endif %}>
+                            {{ course.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-white">Students (Select students to enroll)</label>
+                <div id="student-checkboxes" class="student-checkboxes" style="max-height: 200px; overflow-y: auto; border: 1px solid #1e90ff; padding: 10px; border-radius: 4px; background-color: #1c2526;">
+                    {% if form_data.students and form_data.course_id %}
+                        {% for student in students %}
+                            {% if student.id|stringformat:"s" in form_data.students %}
+                                <div class="form-check">
+                                    <input type="checkbox" name="students" value="{{ student.id }}" id="student-{{ student.id }}" class="form-check-input" checked>
+                                    <label for="student-{{ student.id }}" class="form-check-label text-white">
+                                        {{ student.first_name }} {{ student.last_name }} ({{ student.roll_number }})
+                                    </label>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">Select a course to load available students.</p>
+                    {% endif %}
+                </div>
+                <small class="text-muted">Check the boxes to enroll students in the selected course.</small>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning text-dark">
+                    <i class="fas fa-save"></i> Save Enrollment
+                </button>
+                <a href="{% url 'students:enrollment_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('course_id').addEventListener('change', function() {
+    const courseId = this.value;
+    const studentCheckboxes = document.getElementById('student-checkboxes');
+    
+    if (!courseId) {
+        studentCheckboxes.innerHTML = '<p class="text-muted">Select a course to load available students.</p>';
+        return;
+    }
+
+    fetch(`/students/api/students-not-enrolled/?course_id=${courseId}`, { credentials: 'include' })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(students => {
+            studentCheckboxes.innerHTML = '';
+            if (students.length === 0) {
+                studentCheckboxes.innerHTML = '<p class="text-muted">No students available to enroll in this course.</p>';
+                return;
+            }
+            students.forEach(student => {
+                const div = document.createElement('div');
+                div.className = 'form-check';
+                div.innerHTML = `
+                    <input type="checkbox" name="students" value="${student.id}" id="student-${student.id}" class="form-check-input">
+                    <label for="student-${student.id}" class="form-check-label text-white">
+                        ${student.first_name} ${student.last_name} (${student.roll_number})
+                    </label>
+                `;
+                studentCheckboxes.appendChild(div);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching students:', error);
+            studentCheckboxes.innerHTML = `<p class="text-danger">Error loading students: ${error.message}</p>`;
+        });
+});
+</script>
+
+<style>
+/* Form styles */
+.form-control, .form-select {
+    background-color: #1c2526 !important;
+    color: #e6e6e6 !important;
+    border: 1px solid #1e90ff !important;
+}
+.form-control::placeholder, .form-select::placeholder {
+    color: #8892b0 !important;
+}
+.form-select option {
+    background-color: #0a192f !important;
+    color: #e6e6e6 !important;
+}
+.form-check-input {
+    background-color: #1c2526 !important;
+    border: 1px solid #1e90ff !important;
+}
+.form-check-input:checked {
+    background-color: #1e90ff !important;
+    border-color: #1e90ff !important;
+}
+.btn-warning {
+    background-color: #ffd700 !important;
+    color: #000000 !important;
+    border: none;
+}
+.btn-warning:hover {
+    background-color: #e6c200 !important;
+}
+.btn-secondary {
+    background-color: #6c757d !important;
+    border: none;
+}
+.btn-secondary:hover {
+    background-color: #5a6268 !important;
+}
+.card.bg-dark-blue {
+    background-color: #0a192f !important;
+    border: 1px solid #1e90ff;
+}
+.text-muted {
+    color: #8892b0 !important;
+}
+</style>
+{% endblock %}

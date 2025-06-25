@@ -1,154 +1,137 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Add Student - Student Management System{% endblock %}
 
 {% block content %}
-<div class="container mt-5" data-aos="fade-up">
-    <h2 class="text-white">Add New Student</h2>
-    <div class="card shadow-sm" style="background-color: #1a3c34;">
-        <div class="card-body">
-            {% if messages %}
-            <div class="alert-container">
-                {% for message in messages %}
-                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                
-                <!-- Personal Information -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="username" class="form-label">Username*</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="email" class="form-label">Email*</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="first_name" class="form-label">First Name*</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="last_name" class="form-label">Last Name*</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" required>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="roll_number" class="form-label">Roll Number*</label>
-                        <input type="text" class="form-control" id="roll_number" name="roll_number" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="password" class="form-label">Password*</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                </div>
-                
-                <!-- Academic Information -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="department" class="form-label">Department</label>
-                        <select class="form-select" id="department" name="department">
-                            <option value="" selected disabled>Select Department</option>
-                            {% for department in departments %}
-                            <option value="{{ department.id }}">{{ department.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="course" class="form-label">Course</label>
-                        <select class="form-select" id="course" name="course">
-                            <option value="" selected disabled>Select Course</option>
-                            {% for course in courses %}
-                            <option value="{{ course.id }}">{{ course.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Status -->
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
-                    <label class="form-check-label" for="is_active">Active</label>
-                </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary me-md-2">Add Student</button>
-                    <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Cancel</a>
-                </div>
-            </form>
+<div class="container mt-5 mb-5">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Add Student Form -->
+    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
+        <h2 class="mb-4 text-white"><i class="fas fa-user-plus me-2"></i>Add New Student</h2>
+        <form method="POST" enctype="multipart/form-data" class="d-flex flex-column gap-3">
+            {% csrf_token %}
+            <!-- Personal Information -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="username" class="form-label text-white">Username*</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="email" class="form-label text-white">Email*</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="first_name" class="form-label text-white">First Name*</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="last_name" class="form-label text-white">Last Name*</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="roll_number" class="form-label text-white">Roll Number*</label>
+                    <input type="text" class="form-control" id="roll_number" name="roll_number" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="password" class="form-label text-white">Password*</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+            </div>
+            <!-- Academic Information -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="department" class="form-label text-white">Department</label>
+                    <select class="form-select" id="department" name="department">
+                        <option value="" selected>Select Department</option>
+                        {% for department in departments %}
+                        <option value="{{ department.id }}">{{ department.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="course" class="form-label text-white">Course</label>
+                    <select class="form-select" id="course" name="course">
+                        <option value="" selected>Select Course</option>
+                        {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <!-- Status -->
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                <label class="form-check-label text-white" for="is_active">Active</label>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning text-dark">
+                    <i class="fas fa-save"></i> Add Student
+                </button>
+                <a href="{% url 'students:student_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 
 <style>
-    /* Ensure form labels are highly visible */
-    .form-label {
-        color: #ffffff !important;
-        font-weight: bold;
-    }
-
-    /* Enhance form control visibility */
-    .form-control, .form-select {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        color: #ffffff !important;
-        border: 1px solid #1e90ff !important;
-    }
-
-    /* Placeholder text color */
-    .form-control::placeholder {
-        color: #cccccc !important;
-    }
-
-    /* Focus state */
-    .form-control:focus, .form-select:focus {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        border-color: #ffeb3b !important;
-        box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
-        color: #ffffff !important;
-    }
-
-    /* Select dropdown options */
-    .form-select option {
-        background-color: #1a3c34 !important;
-        color: #ffffff !important;
-    }
-
-    /* Card styling */
-    .card {
-        border: none;
-        border-radius: 10px;
-    }
-
-    /* Button styling */
-    .btn-primary {
-        background-color: #1e90ff !important;
-        border: none;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d !important;
-        border: none;
-    }
-
-    /* Form check styling */
-    .form-check-input:checked {
-        background-color: #1e90ff;
-        border-color: #1e90ff;
-    }
+/* Form styles */
+.form-control, .form-select {
+    background-color: #1c2526 !important;
+    color: #e6e6e6 !important;
+    border: 1px solid #1e90ff !important;
+}
+.form-control::placeholder, .form-select::placeholder {
+    color: #8892b0 !important;
+}
+.form-select option {
+    background-color: #0a192f !important;
+    color: #e6e6e6 !important;
+}
+.form-check-input {
+    background-color: #1c2526 !important;
+    border: 1px solid #1e90ff !important;
+}
+.form-check-input:checked {
+    background-color: #1e90ff !important;
+    border-color: #1e90ff !important;
+}
+.btn-warning {
+    background-color: #ffd700 !important;
+    color: #000000 !important;
+    border: none;
+}
+.btn-warning:hover {
+    background-color: #e6c200 !important;
+}
+.btn-secondary {
+    background-color: #6c757d !important;
+    border: none;
+}
+.btn-secondary:hover {
+    background-color: #5a6268 !important;
+}
+.card.bg-dark-blue {
+    background-color: #0a192f !important;
+    border: 1px solid #1e90ff;
+}
 </style>
-
-
-   
 {% endblock %}
