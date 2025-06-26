@@ -20,14 +20,14 @@
 
     <!-- Edit Attendance Form -->
     <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
-        <h2 class="mb-4 text-white"><i class="fas fa-clipboard-edit me-2"></i>Edit Attendance</h2>
+        <h2 class="mb-4 text-white"><i class="fas fa-clipboard-check me-2"></i>Edit Attendance</h2>
         <form method="POST" id="attendance-edit-form" class="d-flex flex-column gap-3">
             {% csrf_token %}
             <div class="mb-3">
                 <label for="lecture_id" class="form-label text-white">Lecture</label>
                 <select name="lecture_id" id="lecture_id" class="form-select" required disabled>
                     <option value="{{ attendance.lecture.id }}" selected>
-                        {{ attendance.lecture.course.name }} - {{ attendance.lecture.subject.name|default:"N/A" }} ({{ attendance.lecture.date|date:"Y-m-d" }})
+                        {{ attendance.lecture.course.name }} - {{ attendance.lecture.subject.name|default:"N/A" }} ({{ attendance.lecture.date|date:"Y-m-d" }} {{ attendance.lecture.time|time:"H:i" }})
                     </option>
                 </select>
                 <input type="hidden" name="lecture_id" value="{{ attendance.lecture.id }}">
@@ -37,6 +37,10 @@
                 <input type="text" name="date" id="date" class="form-control" value="{{ attendance.lecture.date|date:'Y-m-d' }}" readonly>
             </div>
             <div class="mb-3">
+                <label for="time" class="form-label text-white">Time</label>
+                <input type="text" name="time" id="time" class="form-control" value="{{ attendance.lecture.time|time:'H:i' }}" readonly>
+            </div>
+            <div class="mb-3">
                 <label class="form-label text-white">Student</label>
                 <div class="table-responsive">
                     <table class="table table-striped">
@@ -44,7 +48,9 @@
                             <tr style="background-color: #0a192f; color: #1e90ff;">
                                 <th class="col-min-width">Name</th>
                                 <th class="col-min-width">Roll Number</th>
-                                <th class="col-min-width">Status</th>
+                                <th class="col-min-width">Present</th>
+                                <th class="col-min-width">Absent</th>
+                                <th class="col-min-width">Left</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -52,10 +58,19 @@
                                 <td>{{ attendance.student.first_name }} {{ attendance.student.last_name }}</td>
                                 <td>{{ attendance.student.roll_number }}</td>
                                 <td>
-                                    <select name="status" class="form-select" style="background: #1c2526; color: #e6e6e6; border: 1px solid #1e90ff;">
-                                        <option value="Present" {% if attendance.status == "Present" %}selected{% endif %}>Present</option>
-                                        <option value="Absent" {% if attendance.status == "Absent" %}selected{% endif %}>Absent</option>
-                                    </select>
+                                    <input type="checkbox" name="status" value="Present"
+                                        {% if attendance.status == "Present" %}checked{% endif %}
+                                        class="status-checkbox" data-student-id="{{ attendance.student.id }}" style="transform: scale(1.2);">
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="status" value="Absent"
+                                        {% if attendance.status == "Absent" or not attendance.status %}checked{% endif %}
+                                        class="status-checkbox" data-student-id="{{ attendance.student.id }}" style="transform: scale(1.2);">
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="status" value="Left"
+                                        {% if attendance.status == "Left" %}checked{% endif %}
+                                        class="status-checkbox" data-student-id="{{ attendance.student.id }}" style="transform: scale(1.2);">
                                 </td>
                             </tr>
                         </tbody>
@@ -73,6 +88,18 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('status-checkbox')) {
+        const studentId = e.target.dataset.studentId;
+        const checkboxes = document.querySelectorAll(`input[name="status"][data-student-id="${studentId}"]`);
+        checkboxes.forEach(cb => {
+            if (cb !== e.target) cb.checked = false;
+        });
+    }
+});
+</script>
 
 <style>
 /* Form and table styles */
@@ -129,6 +156,11 @@
 }
 .table th.col-min-width, .table td {
     min-width: 120px;
+}
+input[type="checkbox"] {
+    accent-color: #1e90ff !important;
+    background-color: #1c2526 !important;
+    border: 1px solid #1e90ff !important;
 }
 </style>
 {% endblock %}

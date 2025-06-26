@@ -43,13 +43,13 @@ urlpatterns = [
     path('attendance/delete/<int:attendance_id>/', views.attendance_delete, name='attendance_delete'),
 
     # Authentication URLs
-    path('login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
+    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', views.logout_view, name='logout'),  # Using custom logout view
-   path('accounts/password_reset/', auth_views.PasswordResetView.as_view(
+    path('accounts/password_reset/', views.CustomPasswordResetView.as_view(
         template_name='registration/password_reset_form.html',
         email_template_name='registration/password_reset_email.html',
         subject_template_name='registration/password_reset_subject.txt',
-        success_url='/students/accounts/password_reset/done/'  # Match this with the next path
+        success_url='/students/accounts/password_reset/done/'
     ), name='password_reset'),
     path('accounts/password_reset/done/', auth_views.PasswordResetDoneView.as_view(
         template_name='registration/password_reset_done.html'

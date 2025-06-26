@@ -50,15 +50,16 @@ class Enrollment(models.Model):
     def __str__(self):
         return f"{self.student} enrolled in {self.course.name}"
 
-# Lecture model (new, directly from mentor’s example)
+# Lecture model (updated with time field)
 class Lecture(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)  # Remove null=True, blank=True
     date = models.DateField()
-    students = models.ManyToManyField(Student, related_name='lectures', blank=True)  # New field
+    time = models.TimeField()  # New field for lecture time
+    students = models.ManyToManyField(Student, related_name='lectures', blank=True)
 
     def __str__(self):
-        return f"{self.course.name} - {self.date}"
+        return f"{self.course.name} - {self.date} {self.time}"
 
 # Attendance model (modified to align with mentor’s structure)
 class Attendance(models.Model):

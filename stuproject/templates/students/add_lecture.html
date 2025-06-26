@@ -50,6 +50,10 @@
                 <input type="date" name="date" id="date" class="form-control" value="{{ form_data.date|default:today }}" min="{{ today }}" required>
             </div>
             <div class="mb-3">
+                <label for="time" class="form-label text-white">Time</label>
+                <input type="time" name="time" id="time" class="form-control" value="{{ form_data.time|default:'09:00' }}" required>
+            </div>
+            <div class="mb-3">
                 <label class="form-label text-white">Students (Select enrolled students)</label>
                 <div id="student-checkboxes" class="student-checkboxes" style="max-height: 200px; overflow-y: auto; border: 1px solid #1e90ff; padding: 10px; border-radius: 4px; background-color: #1c2526;">
                     {% if form_data.students %}

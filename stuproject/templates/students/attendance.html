@@ -4,99 +4,162 @@
 {% block title %}Attendance - {{ student }} - Student Management System{% endblock %}
 
 {% block content %}
-<div class="container mt-5 mb-5">
+<div class="container mt-5 mb-5" data-aos="fade-up">
     <h2>Attendance - {{ student }}</h2>
 
-    <!-- Filter Form -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <form method="GET" class="d-flex gap-3">
-                <select name="attendance_subjects" class="form-select" multiple style="width: auto;">
-                    {% for subject in all_attendance_subjects %}
-                    <option value="{{ subject.id }}" {% if subject.id|stringformat:"s" in selected_attendance_subject_ids %}selected{% endif %}>
-                        {{ subject.name }}
+    <!-- Navigation Links -->
+    <nav class="nav nav-pills mb-4">
+        <a class="nav-link" href="{% url 'students:profile' %}">Profile</a>
+        <a class="nav-link" href="{% url 'students:results' %}">Results</a>
+        <a class="nav-link" href="{% url 'students:fees' %}">Fees</a>
+        <a class="nav-link active" href="{% url 'students:attendance' %}">Attendance</a>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Attendance Filter -->
+    <div class="mb-4" data-aos="fade-right" data-aos-delay="200">
+        <form method="GET" class="d-flex gap-3 flex-wrap">
+            <div class="input-group" style="max-width: 300px;">
+                <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                <select name="attendance_courses" multiple class="form-select search-input" style="height: 100px;">
+                    {% for course in all_attendance_courses %}
+                    <option value="{{ course.id }}" {% if course.id|stringformat:"s" in selected_attendance_course_ids %}selected{% endif %}>
+                        {{ course.name }}
                     </option>
                     {% endfor %}
                 </select>
-                <div class="input-group">
-                    <span class="input-group-text bg-dark-blue text-white"><i class="fas fa-calendar"></i></span>
-                    <input type="date" name="attendance_start_date" class="form-control" value="{{ selected_attendance_start_date }}">
-                </div>
-                <div class="input-group">
-                    <span class="input-group-text bg-dark-blue text-white"><i class="fas fa-calendar"></i></span>
-                    <input type="date" name="attendance_end_date" class="form-control" value="{{ selected_attendance_end_date }}">
-                </div>
-                <button type="submit" class="btn btn-warning text-dark">
-                    <i class="fas fa-filter"></i> Filter
-                </button>
-            </form>
-        </div>
+            </div>
+            <div class="input-group" style="max-width: 200px;">
+                <span class="input-group-text">Start Date</span>
+                <input type="date" name="attendance_start_date" class="form-control" value="{{ selected_attendance_start_date|default:'' }}">
+            </div>
+            <div class="input-group" style="max-width: 200px;">
+                <span class="input-group-text">End Date</span>
+                <input type="date" name="attendance_end_date" class="form-control" value="{{ selected_attendance_end_date|default:'' }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Filter Attendance</button>
+            <a href="{% url 'students:attendance' %}" class="btn btn-secondary">Clear Filter</a>
+        </form>
     </div>
 
     <!-- Attendance Table -->
-    <div class="card p-4 bg-dark-blue" style="background-color: #0a192f; border: 1px solid #1e90ff;">
-        {% if lecture_attendance_list %}
-        {% for lecture_attendance in lecture_attendance_list %}
-        <div class="mb-4">
-            <h4 class="text-white">
-                <i class="fas fa-chalkboard-teacher me-2"></i>
-                Lecture: {{ lecture_attendance.lecture.date|date:"Y-m-d" }} - {{ lecture_attendance.lecture.course.name }}
-                {% if lecture_attendance.lecture.subject %}
-                ({{ lecture_attendance.lecture.subject.name }})
-                {% endif %}
-            </h4>
-            <table class="table table-striped">
-                <thead>
-                    <tr style="background-color: #0a192f; color: #1e90ff;">
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for attendance in lecture_attendance.attendances %}
-                    <tr style="background-color: #1c2526; color: #e6e6e6;">
-                        <td>
-                            <span class="badge {% if attendance.status == 'Present' %}bg-success{% elif attendance.status == 'Absent' %}bg-danger{% else %}bg-warning{% endif %}">
-                                {{ attendance.status }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr style="background-color: #1c2526; color: #e6e6e6;">
-                        <td colspan="1" class="text-center text-muted">No attendance recorded.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="card shadow-sm mb-4" data-aos="fade-up" data-aos-delay="300">
+        <div class="card-body">
+            <h4>Attendance Records</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Course</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in attendances %}
+                        <tr>
+                            <td>{{ attendance.lecture.date }}</td>
+                            <td>{{ attendance.lecture.course.name|default:"Not assigned" }}</td>
+                            <td>{{ attendance.lecture.subject.name|default:"Not assigned" }}</td>
+                            <td>{{ attendance.status }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No attendance records available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        {% endfor %}
-        {% else %}
-        <p class="text-center text-muted">No attendance records found.</p>
-        {% endif %}
     </div>
 
     <!-- Back Button -->
     <div class="mt-4">
-        <a href="{% url 'students:profile' %}" class="btn btn-secondary">Back to Profile</a>
+        <a href="{% url 'students:student_list' %}" class="btn btn-secondary">Back to Student List</a>
     </div>
 </div>
 
 <style>
-/* Inherit existing styles or add specific ones if needed */
-.table th {
-    color: #1e90ff !important;
-    background-color: #0a192f !important;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-    padding: 10px;
+/* Headers */
+h2, h4 {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
-.table td {
-    color: #e6e6e6 !important;
-    background-color: #1c2526 !important;
-    padding: 8px;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+
+/* Card background */
+.card {
+    background-color: rgba(31, 26, 60, 0.9) !important;
 }
-.badge.bg-success { background-color: #28a745 !important; }
-.badge.bg-danger { background-color: #dc3545 !important; }
-.badge.bg-warning { background-color: #ffc107 !important; color: #000000 !important; }
+
+/* Navigation pills */
+.nav-pills .nav-link {
+    color: #ffffff !important;
+    background-color: rgba(0, 0, 0, 0.3) !important;
+}
+.nav-pills .nav-link.active {
+    background-color: #ffeb3b !important;
+    color: #000000 !important;
+}
+
+/* Table styling */
+.table td, .table th {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
+.table .text-muted {
+    color: #8892b0 !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Form inputs */
+.input-group-text {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+}
+.form-select, .search-input, .form-control {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+}
+.form-select:focus, .search-input:focus, .form-control:focus {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-color: #ffeb3b !important;
+    box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25) !important;
+}
+.form-select option {
+    background-color: rgb(34, 26, 60) !important;
+    color: #ffffff !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+.btn-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+/* Alerts */
+.alert {
+    color: #000000 !important;
+}
 </style>
 {% endblock %}

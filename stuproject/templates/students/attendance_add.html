@@ -41,6 +41,14 @@
                 </select>
             </div>
             <div class="mb-3">
+                <label for="date" class="form-label text-white">Date</label>
+                <input type="date" name="date" id="date" class="form-control" value="{{ form_data.date|default:today }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="time" class="form-label text-white">Time</label>
+                <input type="time" name="time" id="time" class="form-control" value="{{ form_data.time|default:'09:00' }}" required>
+            </div>
+            <div class="mb-3">
                 <label class="form-label text-white">Students</label>
                 <div class="table-responsive">
                     <table class="table table-striped">
@@ -48,7 +56,9 @@
                             <tr style="background-color: #0a192f; color: #1e90ff;">
                                 <th class="col-min-width">Name</th>
                                 <th class="col-min-width">Roll Number</th>
-                                <th class="col-min-width">Status</th>
+                                <th class="col-min-width">Present</th>
+                                <th class="col-min-width">Absent</th>
+                                <th class="col-min-width">Left</th>
                             </tr>
                         </thead>
                         <tbody id="attendance-body">
@@ -58,22 +68,31 @@
                                 <td>{{ student.first_name }} {{ student.last_name }}</td>
                                 <td>{{ student.roll_number }}</td>
                                 <td>
-                                    <select name="status_{{ student.id }}" class="form-select" style="background: #1c2526; color: #e6e6e6; border: 1px solid #1e90ff;">
-                                        <option value="Present" {% if form_data.students|lookup:student.id == "Present" %}selected{% endif %}>Present</option>
-                                        <option value="Absent" {% if form_data.students|lookup:student.id == "Absent" %}selected{% endif %}>Absent</option>
-                                    </select>
+                                    <input type="checkbox" name="status_{{ student.id }}" value="Present"
+                                        {% if form_data.students|lookup:student.id == "Present" %}checked{% endif %}
+                                        class="status-checkbox" data-student-id="{{ student.id }}" style="transform: scale(1.2);">
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="status_{{ student.id }}" value="Absent"
+                                        {% if form_data.students|lookup:student.id == "Absent" or not form_data.students|lookup:student.id %}checked{% endif %}
+                                        class="status-checkbox" data-student-id="{{ student.id }}" style="transform: scale(1.2);">
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="status_{{ student.id }}" value="Left"
+                                        {% if form_data.students|lookup:student.id == "Left" %}checked{% endif %}
+                                        class="status-checkbox" data-student-id="{{ student.id }}" style="transform: scale(1.2);">
                                 </td>
                             </tr>
                             {% empty %}
                             {% if form_data.lecture_id %}
                             <tr style="background-color: #1c2526; color: #e6e6e6;">
-                                <td colspan="3" class="text-center text-muted">No students enrolled in this lecture.</td>
+                                <td colspan="5" class="text-center text-muted">No students enrolled in this lecture.</td>
                             </tr>
                             {% endif %}
                             {% endfor %}
                             {% else %}
                             <tr style="background-color: #1c2526; color: #e6e6e6;">
-                                <td colspan="3" class="text-center text-muted">Select a course and lecture to load students.</td>
+                                <td colspan="5" class="text-center text-muted">Select a course and lecture to load students.</td>
                             </tr>
                             {% endif %}
                         </tbody>
@@ -109,42 +128,70 @@ function getCookie(name) {
 }
 const csrftoken = getCookie('csrftoken');
 
+// Serialize form_data into a JavaScript object
+const initialFormData = {
+    lecture_id: "{{ form_data.lecture_id|default:''|escapejs }}",
+    students: {{ form_data.students|default:'{}'|escapejs }},
+    date: "{{ form_data.date|default:today|date:'Y-m-d'|escapejs }}",
+    time: "{{ form_data.time|default:'09:00'|escapejs }}"
+};
+
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('status-checkbox')) {
+        const studentId = e.target.dataset.studentId;
+        const checkboxes = document.querySelectorAll(`input[name="status_${studentId}"]`);
+        checkboxes.forEach(cb => {
+            if (cb !== e.target) cb.checked = false;
+        });
+    }
+});
+
 document.getElementById('course_id').addEventListener('change', function() {
     const courseId = this.value;
     const lectureSelect = document.getElementById('lecture_id');
     const attendanceBody = document.getElementById('attendance-body');
+    const timeInput = document.getElementById('time');
 
     if (!courseId) {
         lectureSelect.innerHTML = '<option value="">Select Lecture</option>';
-        attendanceBody.innerHTML = '<tr style="background-color: #1c2526; color: #e6e6e6;"><td colspan="3" class="text-center text-muted">Select a course and lecture to load students.</td></tr>';
+        attendanceBody.innerHTML = '<tr style="background-color: #1c2526; color: #e6e6e6;"><td colspan="5" class="text-center text-muted">Select a course and lecture to load students.</td></tr>';
+        timeInput.value = initialFormData.time;
         return;
     }
 
     fetch(`/students/api/lectures/?course_id=${courseId}`, {
+        method: 'GET',
         credentials: 'include',
         headers: {
-            'X-CSRFToken': csrftoken
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
         }
     })
         .then(response => {
             if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`HTTP ${response.status}: ${text}`);
-                });
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(lectures => {
+            console.log('API Response:', lectures);  // Debug log
             lectureSelect.innerHTML = '<option value="">Select Lecture</option>';
-            if (lectures.length === 0) {
+            if (!lectures.length || (lectures.length === 1 && 'error' in lectures[0])) {
                 lectureSelect.innerHTML = '<option value="">No lectures available</option>';
             } else {
                 lectures.forEach(lecture => {
                     const option = document.createElement('option');
                     option.value = lecture.id;
-                    option.textContent = `${lecture.subject_name} - ${lecture.date}`;
+                    option.textContent = `${lecture.subject_name || 'No Subject Assigned'} - ${lecture.date || 'N/A'} ${lecture.time || '09:00'}`.trim();
+                    if (initialFormData.lecture_id && lecture.id == initialFormData.lecture_id) {
+                        option.selected = true;
+                    }
                     lectureSelect.appendChild(option);
                 });
+            }
+            if (initialFormData.lecture_id) {
+                lectureSelect.value = initialFormData.lecture_id;
+                setTimeout(() => lectureSelect.dispatchEvent(new Event('change')), 0);
             }
         })
         .catch(error => {
@@ -156,54 +203,84 @@ document.getElementById('course_id').addEventListener('change', function() {
 document.getElementById('lecture_id').addEventListener('change', function() {
     const lectureId = this.value;
     const attendanceBody = document.getElementById('attendance-body');
+    const timeInput = document.getElementById('time');
+    const dateInput = document.getElementById('date');
 
     if (!lectureId) {
-        attendanceBody.innerHTML = '<tr style="background-color: #1c2526; color: #e6e6e6;"><td colspan="3" class="text-center text-muted">Select a course and lecture to load students.</td></tr>';
+        attendanceBody.innerHTML = '<tr style="background-color: #1c2526; color: #e6e6e6;"><td colspan="5" class="text-center text-muted">Select a course and lecture to load students.</td></tr>';
+        timeInput.value = initialFormData.time;
+        dateInput.value = initialFormData.date;
         return;
     }
 
+    // Fetch students for the selected lecture
     fetch(`/students/api/lecture-students/${lectureId}/`, {
+        method: 'GET',
         credentials: 'include',
         headers: {
-            'X-CSRFToken': csrftoken
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
         }
     })
         .then(response => {
             if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`HTTP ${response.status}: ${text}`);
-                });
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(students => {
             attendanceBody.innerHTML = '';
             if (students.length === 0) {
-                attendanceBody.innerHTML = '<tr style="background-color: #1c2526; color: #e6e6e6;"><td colspan="3" class="text-center text-muted">No students enrolled in this lecture.</td></tr>';
+                attendanceBody.innerHTML = '<tr style="background-color: #1c2526; color: #e6e6e6;"><td colspan="5" class="text-center text-muted">No students enrolled in this lecture.</td></tr>';
                 return;
             }
             students.forEach(student => {
                 const row = document.createElement('tr');
-                row.style.cssText = 'background-color: #1c2526; color: #e6e6e6';
+                row.style.cssText = 'background-color: #1c2526; color: #e6e6e6;';
+                const status = initialFormData.students[student.id] || 'Absent';
                 row.innerHTML = `
                     <td>${student.first_name} ${student.last_name}</td>
                     <td>${student.roll_number}</td>
-                    <td>
-                        <select name="status_${student.id}" class="form-select" style="background: #1c2526; color: #e6e6e6; border: 1px solid #1e90ff;">
-                            <option value="Present">Present</option>
-                            <option value="Absent">Absent</option>
-                        </select>
-                    </td>
+                    <td><input type="checkbox" name="status_${student.id}" value="Present" ${status === 'Present' ? 'checked' : ''} class="status-checkbox" data-student-id="${student.id}" style="transform: scale(1.2);"></td>
+                    <td><input type="checkbox" name="status_${student.id}" value="Absent" ${status === 'Absent' ? 'checked' : ''} class="status-checkbox" data-student-id="${student.id}" style="transform: scale(1.2);"></td>
+                    <td><input type="checkbox" name="status_${student.id}" value="Left" ${status === 'Left' ? 'checked' : ''} class="status-checkbox" data-student-id="${student.id}" style="transform: scale(1.2);"></td>
                 `;
                 attendanceBody.appendChild(row);
             });
         })
         .catch(error => {
             console.error('Error fetching students:', error);
-            attendanceBody.innerHTML = `<tr style="background-color: #1c2526; color: #e6e6e6;"><td colspan="3" class="text-center text-danger">Error loading students: ${error.message}</td></tr>`;
+            attendanceBody.innerHTML = `<tr style="background-color: #1c2526; color: #e6e6e6;"><td colspan="5" class="text-center text-danger">Error loading students: ${error.message}</td></tr>`;
+        });
+
+    // Fetch lecture details to populate date and time
+    fetch(`/students/api/lecture/${lectureId}/`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('Lecture not found');
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(lecture => {
+            dateInput.value = lecture.date || initialFormData.date;
+            timeInput.value = lecture.time || initialFormData.time;
+        })
+        .catch(error => {
+            console.error('Error fetching lecture details:', error);
+            dateInput.value = initialFormData.date;
+            timeInput.value = initialFormData.time;
         });
 });
-
 </script>
 
 <style>
@@ -261,6 +338,11 @@ document.getElementById('lecture_id').addEventListener('change', function() {
 }
 .table th.col-min-width, .table td {
     min-width: 120px;
+}
+input[type="checkbox"] {
+    accent-color: #1e90ff !important;
+    background-color: #1c2526 !important;
+    border: 1px solid #1e90ff !important;
 }
 </style>
 {% endblock %}

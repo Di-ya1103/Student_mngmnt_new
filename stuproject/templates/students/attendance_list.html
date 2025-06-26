@@ -30,7 +30,7 @@
                     <option value="">All Lectures</option>
                     {% for lecture in lectures %}
                     <option value="{{ lecture.id }}" {% if request.GET.lecture == lecture.id|stringformat:"s" %}selected{% endif %}>
-                        {{ lecture.course.name }} - {{ lecture.date|date:"Y-m-d" }}{% if lecture.subject %} ({{ lecture.subject.name }}){% endif %}
+                        {{ lecture.course.name }} - {{ lecture.date|date:"Y-m-d" }} {{ lecture.time|time:"H:i" }}{% if lecture.subject %} ({{ lecture.subject.name }}){% endif %}
                     </option>
                     {% endfor %}
                 </select>
@@ -56,6 +56,7 @@
                         <th class="col-min-width">Course</th>
                         <th class="col-min-width">Subject</th>
                         <th class="col-min-width">Lecture Date</th>
+                        <th class="col-min-width">Lecture Time</th>
                         <th class="col-min-width">Status</th>
                         <th class="col-actions-width">Actions</th>
                     </tr>
@@ -68,6 +69,7 @@
                         <td>{{ attendance.lecture.course.name }}</td>
                         <td>{{ attendance.lecture.subject.name|default:"N/A" }}</td>
                         <td>{{ attendance.lecture.date|date:"Y-m-d" }}</td>
+                        <td>{{ attendance.lecture.time|time:"H:i" }}</td>
                         <td>
                             <span class="badge {% if attendance.status == 'Present' %}bg-success{% elif attendance.status == 'Absent' %}bg-danger{% else %}bg-warning{% endif %}">
                                 {{ attendance.status }}
@@ -84,7 +86,7 @@
                     </tr>
                     {% empty %}
                     <tr style="background-color: #1c2526; color: #e6e6e6;">
-                        <td colspan="7" class="text-center text-muted">No attendance records found.</td>
+                        <td colspan="8" class="text-center text-muted">No attendance records found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -160,7 +162,7 @@
 .table th.col-min-width, .table td {
     min-width: 120px;
 }
-.table th.col-actions-width, .table td:nth-child(7) {
+.table th.col-actions-width, .table td:nth-child(8) {
     min-width: 140px;
 }
 .form-control, .form-select {
@@ -206,7 +208,7 @@
 }
 .page-item.disabled .page-link {
     color: #8892b0 !important;
-    background-color: #1c2526 !important;
+    background-color: #0a192f !important;
     border-color: #1e90ff !important;
 }
 .badge.bg-success {

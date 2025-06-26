@@ -24,14 +24,14 @@
         <form method="POST" action="{% url 'students:add_result' student.id %}" class="d-flex flex-column gap-3">
             {% csrf_token %}
             <div class="mb-3">
-                <label for="subject" class="form-label text-white">Subject</label>
-                <select class="form-select" id="subject" name="subject" required>
-                    <option value="">Select Subject</option>
-                    {% for subject in subjects %}
-                    <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code })</option>
-                    {% endfor %}
-                </select>
-            </div>
+    <label for="subject" class="form-label text-white">Subject</label>
+    <select class="form-select" id="subject" name="subject" required>
+        <option value="">Select Subject</option>
+        {% for subject in subjects %}
+        <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code }})</option>
+        {% endfor %}
+    </select>
+</div>
             <div class="mb-3">
                 <label for="score" class="form-label text-white">Score</label>
                 <input type="number" class="form-control" id="score" name="score" step="0.01" min="0" max="100" required>
