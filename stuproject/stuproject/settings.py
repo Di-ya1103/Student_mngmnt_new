@@ -83,9 +83,15 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+
+# This is where Django will look for *extra* static files (used during development)
 STATICFILES_DIRS = [
-    BASE_DIR / "students/static",
+    BASE_DIR / 'static',  # example: custom folder for your static files
 ]
+
+# This is where static files will be *collected* to during collectstatic (for production)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication settings
